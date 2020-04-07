@@ -104,15 +104,16 @@
   \RequirePackage[dvips,usenames]{color}
   \RequirePackage{hyperref}
   \hypersetup{colorlinks=true,
-            linkcolor=black,
-            urlcolor=black,
-            citecolor=black}
+              linkcolor=black,
+              urlcolor=black,
+              citecolor=black}
 \fi
-\RequirePackage[alf]{abntex2cite}
+\RequirePackage[alf,abnt-etal-cite=1]{abntex2cite}
+%\RequirePackage[backend=biber,style=abnt,language=english]{biblatex}
 \RequirePackage{lastpage}
 \RequirePackage[top=3cm, bottom=2cm, left=3cm, right=2cm]{geometry}
 \RequirePackage{fix-cm}
-\RequirePackage{color}
+\RequirePackage{xcolor}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% GENERAL PURPOSE MACROS

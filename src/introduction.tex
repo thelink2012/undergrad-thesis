@@ -1,0 +1,38 @@
+\xchapter{Introduction}{}
+
+\section{Motivation}
+
+The idea of sharing the time resources of a computer machine is one of the oldest in computer science. Huge and expensive computers were underused both by the limited speed of human interaction \cite{strachey1959time} and by programs accessing slow peripherals devices \cite{codd1960multiprogram}. Both problems led to the development of computer systems capable of executing multiple tasks in a single processing unit concurrently through time slicing \cite{corbato1962experimental,codd1959multiprogramming}.
+
+Today, small computer chips are not only capable of running multiple tasks in a single processing unit, but multiple tasks in multiple processing units thanks to chip multithreading \cite{tullsen1995simultaneous,olukotun1996case}. This paradigm required, and still requires, further research in task scheduling algorithms to take proper advantage of chips \cite{fedorova2004chip}. On top of that, the subject has recently gained more attention due to the rising interest in reducing power consumption of data-centers and embedded systems \cite{mittal2014power,mittal2014survey}. Modern chip designers are heavily invested in adjusting their cores for this purpose \cite{greenhalgh2011big,fisher2005power} with architectural features such as asymmetric multi-core processing \cite{kumar2003single}, dynamic voltage scaling \cite{macken1990voltage} and per-core power gating \cite{leverich2009power}.
+
+Given the interest for research in scheduling algorithms and the barriers during the implementation of one, such as the need to modify the operating system kernel or develop runtime systems to control applications, this work presents an infrastructure on top of the Java Virtual Machine made specifically to fasten the development of scheduling algorithms. This way, researches can focus on the algorithms instead of the supporting environment.
+
+
+\section{Related Work}
+
+%% Scheduling
+% Compiler-assisted Adaptive Program Scheduling in big.LITTLE Systems
+% Hipster: Hybrid Task Manager for Latency-Critical CloudWorkloads
+
+
+%% TODO profilers and java profilers
+
+%% Profilers with user-customized code
+% + An Efficient and Generic Event-based Profiler Frameworkfor Dynamic Languages
+% + Portable and accurate samplingprofiling for Java
+% + A Portable CPU-ManagementFramework for Java
+% + ProfBuilder:  A Package for Rapidly Building Java ExecutionProfilers
+
+%% Path tracing and CCT
+% + Exploiting  Hardware  Performance  Counters  with  Flow  and  Context  Sensitive  Profiling 
+% A Portable Sampling-Based  Profiler for Java Virtual Machines
+
+%% Async
+% https://dl.acm.org/doi/pdf/10.1145/2568088.2576759
+
+\section{Contribution}
+
+% Applications go here
+
+TODO
