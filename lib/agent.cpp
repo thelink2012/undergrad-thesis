@@ -183,12 +183,14 @@ ThreadStart(jvmtiEnv *jvmti_env,
     const auto curr_time = get_time();
     phase_checkpoint(curr_time);
 
+    {
     auto phase_ptr = get_phase();
     ::thread_id = phase_alloc_thread();
     phase_ptr->phase_thread_change_count.fetch_add(1, memory_order_relaxed);
     phase_ptr->record_cpu(::thread_id);
     phase_ptr->phase_thread_state_change[thread_id].store(
             AtomicPhase::THREAD_STATE_RUNNING, memory_order_relaxed);
+    }
 }
 
 /// Called when a Java Thread ends.
@@ -367,7 +369,6 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
     has_seen_signal_dispatcher.store(false);
     original_Unsafe_Park = nullptr;
 
-    fprintf(stderr, "sync_jvmti: Agent has been loaded.\n");
     return 0;
 }
 
@@ -376,5 +377,4 @@ JNIEXPORT void JNICALL
 Agent_OnUnload(JavaVM *vm)
 {
     phase_shutdown();
-    fprintf(stderr, "sync_jvmti: Agent has been unloaded\n");
 }

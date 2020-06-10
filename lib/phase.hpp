@@ -10,6 +10,7 @@ struct AtomicPhase
 {
     static constexpr int MAX_THREADS = 300;
 
+    // TODO to profagent enum
     static constexpr uint8_t THREAD_STATE_UNCHANGED = 0;
     static constexpr uint8_t THREAD_STATE_RUNNING = 1;
     static constexpr uint8_t THREAD_STATE_CONTENDED = 2;
