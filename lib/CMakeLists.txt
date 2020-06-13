@@ -6,7 +6,7 @@ add_library(profagent STATIC
   phase.cpp
 )
 target_compile_features(profagent PUBLIC cxx_std_14)
-target_compile_definitions(profagent PRIVATE PROFAGENT_IMPLEMENTATION)
+target_compile_definitions(profagent PRIVATE JVMTIPROF_IMPLEMENTATION)
 set_property(TARGET profagent PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(profagent
   PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>

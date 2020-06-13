@@ -2,8 +2,9 @@
 #include <cassert>
 #include <initializer_list>
 
-static_assert(sizeof(ProfAgentCapabilities) == 16,
-              "sizeof ProfAgentCapabilities must be 16 bytes");
+static_assert(static_cast<jint>(JVMTIPROF_SPECIFIC_ERROR_MIN)
+                      > static_cast<jint>(JVMTI_ERROR_MAX),
+              "jvmtiprof-specific error codes overlap with jvmti error codes.");
 
 #define NULL_CHECK(arg, result)                                                \
     do                                                                         \
@@ -174,27 +175,28 @@ jvmtiError JNICALL jvmti_SetEventCallbacks(jvmtiEnv* jvmti,
 namespace profagent
 {
 const ProfAgentEnvInterface ProfAgentEnvImpl::interface_1 = {
-        nullptr, /* 0 */
-        nullptr,
-        nullptr,
-        nullptr,
-        nullptr,
-        nullptr,
-        nullptr,
-        nullptr,
-        nullptr,
-        nullptr,
-        ProfAgentEnv_SetEventNotificationMode, /* 10 */
-        ProfAgentEnv_SetEventCallbacks,
-        nullptr,
-        nullptr,
-        nullptr,
-        nullptr,
-        nullptr,
-        nullptr,
-        ProfAgentEnv_AddCapabilities,
-        nullptr,
-        nullptr, /* 20 */
+        nullptr, /* DisposeEnvironment */
+        nullptr, /* GetJvmtiEnv */
+        nullptr, /* GetVersionNumber */
+        nullptr, /* GetErrorName */
+        nullptr, /* SetVerboseFlag */
+        nullptr, /* SetEventNotificationMode */
+        nullptr, /* SetEventCallbacks */
+        nullptr, /* GenerateEvents */
+        nullptr, /* GetPotentialCapabilities */
+        nullptr, /* AddCapabilities */
+        nullptr, /* RelinquishCapabilities */
+        nullptr, /* GetCapabilities */
+        nullptr, /* SetExecutionSamplingInterval */
+        nullptr, /* GetStackTraceAsync */
+        nullptr, /* GetProcessorCount */
+        nullptr, /* SetApplicationStateSamplingInterval */
+        nullptr, /* GetSampledCriticalSectionPressure */
+        nullptr, /* GetSampledThreadCount */
+        nullptr, /* GetSampledThreadsData */
+        nullptr, /* GetSampledHardwareCounters */
+        nullptr, /* GetSampledSoftwareCounters */
+        nullptr, /* SetMethodEventFlag */
 };
 
 void ProfAgentEnvImpl::patch_jvmti_interface(jvmtiInterface_1& jvmti_interface)
@@ -207,9 +209,6 @@ void ProfAgentEnvImpl::patch_jvmti_interface(jvmtiInterface_1& jvmti_interface)
     // DisposeEnvironment
     //
     // Generate Events
-    // Get Extension Functions
-    // Get Extension Events
-    // Set Extension Event Callback
     //
     // Get Potential Capabilities
     // Add Capabilities

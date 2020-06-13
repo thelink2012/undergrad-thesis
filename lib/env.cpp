@@ -248,7 +248,7 @@ auto ProfAgentEnvImpl::set_event_callbacks(
         if(size_of_callbacks != sizeof(ProfAgentEventCallbacks))
             return PROFAGENT_ERROR_ILLEGAL_ARGUMENT;
 
-        m_callbacks.sample_all = callbacks->Tick;
+        m_callbacks.sample_all = callbacks->SampleApplicationState;
     }
 
     return PROFAGENT_ERROR_NONE;
@@ -259,8 +259,8 @@ auto ProfAgentEnvImpl::add_capabilities(
 {
     // TODO check phase
 
-    if(capabilities.can_generate_tick_events)
-        m_capabilities.can_generate_tick_events = true;
+    if(capabilities.can_generate_sample_application_state_events)
+        m_capabilities.can_generate_sample_application_state_events = true;
 
     return PROFAGENT_ERROR_NONE;
 }

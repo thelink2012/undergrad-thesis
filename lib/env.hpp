@@ -1,6 +1,27 @@
 #pragma once
-#include <profagent/profagent.h>
+#include <jvmtiprof/jvmtiprof.h>
 #include <cstddef>
+
+// TODO remove
+using ProfAgentEnv = jvmtiProfEnv;
+using ProfAgentEventMode = jvmtiEventMode;
+using ProfAgentError = jvmtiProfError;
+using ProfAgentEvent = jvmtiProfEvent;
+using ProfAgentEventCallbacks = jvmtiProfEventCallbacks;
+using ProfAgentCapabilities = jvmtiProfCapabilities;
+using ProfAgentEnvInterface = jvmtiProfInterface_;
+using ProfAgentEventTick = jvmtiProfEventSampleApplicationState;
+using ProfAgentVersion = jvmtiProfVersion;
+#define PROFAGENT_ERROR_NULL_POINTER JVMTIPROF_ERROR_NULL_POINTER
+#define PROFAGENT_ERROR_UNSUPPORTED_VERSION JVMTIPROF_ERROR_UNSUPPORTED_VERSION
+#define PROFAGENT_ERROR_NONE JVMTIPROF_ERROR_NONE
+#define PROFAGENT_ERROR_INVALID_ENVIRONMENT JVMTIPROF_ERROR_INVALID_ENVIRONMENT
+#define PROFAGENT_ERROR_WRONG_PHASE JVMTIPROF_ERROR_WRONG_PHASE
+#define PROFAGENT_ERROR_ILLEGAL_ARGUMENT JVMTIPROF_ERROR_ILLEGAL_ARGUMENT
+#define PROFAGENT_VERSION_1_0 JVMTIPROF_VERSION_1_0
+#define PROFAGENT_ENABLE JVMTI_ENABLE
+#define PROFAGENT_DISABLE JVMTI_DISABLE
+#define PROFAGENT_EVENT_TICK JVMTIPROF_EVENT_SAMPLE_APPLICATION_STATE
 
 namespace profagent
 {
