@@ -2,53 +2,32 @@
 #include <jvmtiprof/jvmtiprof.h>
 #include <cstddef>
 
-// TODO remove
-using ProfAgentEnv = jvmtiProfEnv;
-using ProfAgentEventMode = jvmtiEventMode;
-using ProfAgentError = jvmtiProfError;
-using ProfAgentEvent = jvmtiProfEvent;
-using ProfAgentEventCallbacks = jvmtiProfEventCallbacks;
-using ProfAgentCapabilities = jvmtiProfCapabilities;
-using ProfAgentEnvInterface = jvmtiProfInterface_;
-using ProfAgentEventTick = jvmtiProfEventSampleApplicationState;
-using ProfAgentVersion = jvmtiProfVersion;
-#define PROFAGENT_ERROR_NULL_POINTER JVMTIPROF_ERROR_NULL_POINTER
-#define PROFAGENT_ERROR_UNSUPPORTED_VERSION JVMTIPROF_ERROR_UNSUPPORTED_VERSION
-#define PROFAGENT_ERROR_NONE JVMTIPROF_ERROR_NONE
-#define PROFAGENT_ERROR_INVALID_ENVIRONMENT JVMTIPROF_ERROR_INVALID_ENVIRONMENT
-#define PROFAGENT_ERROR_WRONG_PHASE JVMTIPROF_ERROR_WRONG_PHASE
-#define PROFAGENT_ERROR_ILLEGAL_ARGUMENT JVMTIPROF_ERROR_ILLEGAL_ARGUMENT
-#define PROFAGENT_VERSION_1_0 JVMTIPROF_VERSION_1_0
-#define PROFAGENT_ENABLE JVMTI_ENABLE
-#define PROFAGENT_DISABLE JVMTI_DISABLE
-#define PROFAGENT_EVENT_TICK JVMTIPROF_EVENT_SAMPLE_APPLICATION_STATE
-
-namespace profagent
+namespace jvmtiprof
 {
-class ProfAgentEnvImpl
+class JvmtiProfEnv
 {
 public:
-    ProfAgentEnvImpl(JavaVM& vm, jvmtiEnv& jvmti);
-    ~ProfAgentEnvImpl();
+    JvmtiProfEnv(JavaVM& vm, jvmtiEnv& jvmti);
+    ~JvmtiProfEnv();
     
-    ProfAgentEnvImpl(const ProfAgentEnvImpl&) = delete;
-    ProfAgentEnvImpl& operator=(const ProfAgentEnvImpl&) = delete;
+    JvmtiProfEnv(const JvmtiProfEnv&) = delete;
+    JvmtiProfEnv& operator=(const JvmtiProfEnv&) = delete;
 
-    ProfAgentEnvImpl(ProfAgentEnvImpl&&) = delete;
-    ProfAgentEnvImpl& operator=(ProfAgentEnvImpl&&) = delete;
+    JvmtiProfEnv(JvmtiProfEnv&&) = delete;
+    JvmtiProfEnv& operator=(JvmtiProfEnv&&) = delete;
 
-    auto external() -> ProfAgentEnv& { return m_external; }
+    auto external() -> jvmtiProfEnv& { return m_external; }
 
-    static auto from_external(ProfAgentEnv& external) -> ProfAgentEnvImpl&
+    static auto from_external(jvmtiProfEnv& external) -> JvmtiProfEnv&
     {
-        return *reinterpret_cast<ProfAgentEnvImpl*>(
+        return *reinterpret_cast<JvmtiProfEnv*>(
                 reinterpret_cast<uintptr_t>(&external)
-                - offsetof(ProfAgentEnvImpl, m_external));
+                - offsetof(JvmtiProfEnv, m_external));
     }
 
-    static auto from_jvmti_env(jvmtiEnv& jvmti_env) -> ProfAgentEnvImpl&;
+    static auto from_jvmti_env(jvmtiEnv& jvmti_env) -> JvmtiProfEnv&;
 
-    static auto from_jvmti_env(jvmtiEnv& jvmti_env, ProfAgentEnvImpl*& result)
+    static auto from_jvmti_env(jvmtiEnv& jvmti_env, JvmtiProfEnv*& result)
             -> jvmtiError;
 
     auto is_valid() const -> bool;
@@ -73,14 +52,14 @@ public:
     auto set_event_callbacks(const jvmtiEventCallbacks* callbacks,
                              jint size_of_callbacks) -> jvmtiError;
 
-    auto set_event_notification_mode(ProfAgentEventMode mode, ProfAgentEvent event_type,
-                                     jthread event_thread) -> ProfAgentError;
+    auto set_event_notification_mode(jvmtiEventMode mode, jvmtiProfEvent event_type,
+                                     jthread event_thread) -> jvmtiProfError;
 
-    auto set_event_callbacks(const ProfAgentEventCallbacks* callbacks,
-                             jint size_of_callbacks) -> ProfAgentError;
+    auto set_event_callbacks(const jvmtiProfEventCallbacks* callbacks,
+                             jint size_of_callbacks) -> jvmtiProfError;
 
-    auto add_capabilities(const ProfAgentCapabilities& capabilities)
-            -> ProfAgentError;
+    auto add_capabilities(const jvmtiProfCapabilities& capabilities)
+            -> jvmtiProfError;
     
     // TODO private
     void sample_consumer_thread();
@@ -90,8 +69,8 @@ private:
     auto intercepts_event(jvmtiEvent event_type) const -> bool;
 
 private:
-    static const ProfAgentEnvInterface interface_1;
-    static constexpr jint prof_agent_magic = 0x71EF;
+    static const jvmtiProfInterface_ interface_1;
+    static constexpr jint jvmtiprof_magic = 0x71EF;
     static constexpr jint dispose_magic = 0xDEFC;
     static constexpr jint bad_magic = 0xDEAD;
 
@@ -108,11 +87,11 @@ private:
         jvmtiEventVMStart vm_start;
         jvmtiEventVMInit vm_init;
         jvmtiEventVMDeath vm_death;
-        ProfAgentEventTick sample_all;
+        jvmtiProfEventSampleApplicationState sample_all;
     };
 
-    ProfAgentEnv m_external;
-    jint m_magic = prof_agent_magic;
+    jvmtiProfEnv m_external;
+    jint m_magic = jvmtiprof_magic;
 
     jvmtiEnv* m_jvmti_env;
     const jvmtiInterface_1* m_original_jvmti_interface;
@@ -120,7 +99,7 @@ private:
 
     const void* m_jvmti_local_storage{};
 
-    ProfAgentCapabilities m_capabilities{};
+    jvmtiProfCapabilities m_capabilities{};
 
     EventCallbacks m_callbacks{};
     EventModes m_event_modes{};

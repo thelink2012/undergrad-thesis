@@ -6,20 +6,20 @@
 
 namespace
 {
-using profagent::ProfAgentEnvImpl;
+using jvmtiprof::JvmtiProfEnv;
 
 void JNICALL vm_start(jvmtiEnv* jvmti_env, JNIEnv* jni_env)
 {
     fprintf(stderr, "VMSTART\n");
 
-    return ProfAgentEnvImpl::from_jvmti_env(*jvmti_env).vm_start(jni_env);
+    return JvmtiProfEnv::from_jvmti_env(*jvmti_env).vm_start(jni_env);
 }
 
 void JNICALL vm_init(jvmtiEnv* jvmti_env, JNIEnv* jni_env, jthread thread)
 {
     fprintf(stderr, "VMINIT\n");
 
-    return ProfAgentEnvImpl::from_jvmti_env(*jvmti_env)
+    return JvmtiProfEnv::from_jvmti_env(*jvmti_env)
             .vm_init(jni_env, thread);
 }
 
@@ -27,12 +27,12 @@ void JNICALL vm_death(jvmtiEnv* jvmti_env, JNIEnv* jni_env)
 {
     fprintf(stderr, "VMDEATH\n");
 
-    return ProfAgentEnvImpl::from_jvmti_env(*jvmti_env).vm_death(jni_env);
+    return JvmtiProfEnv::from_jvmti_env(*jvmti_env).vm_death(jni_env);
 }
 
 void JNICALL sample_consumer_thread(jvmtiEnv* jvmti_env, JNIEnv* jni_env, void* self)
 {
-    return static_cast<ProfAgentEnvImpl*>(self)->sample_consumer_thread();
+    return static_cast<JvmtiProfEnv*>(self)->sample_consumer_thread();
 }
 }
 
@@ -41,14 +41,14 @@ namespace
 struct EnvSingleton
 {
     jvmtiEnv* jvmti_env;
-    ProfAgentEnvImpl* jvmtiprof_env;
+    JvmtiProfEnv* jvmtiprof_env;
 };
 EnvSingleton env_singleton{};
 }
 
-namespace profagent
+namespace jvmtiprof
 {
-ProfAgentEnvImpl::ProfAgentEnvImpl(JavaVM& vm, jvmtiEnv& jvmti)
+JvmtiProfEnv::JvmtiProfEnv(JavaVM& vm, jvmtiEnv& jvmti)
 {
     static_assert(sizeof(*jvmti.functions) == sizeof(m_patched_jvmti_interface),
                   "Incompatible JVMTI interfaces");
@@ -60,7 +60,7 @@ ProfAgentEnvImpl::ProfAgentEnvImpl(JavaVM& vm, jvmtiEnv& jvmti)
 
     jvmtiError jvmti_err;
 
-    m_external.functions = &ProfAgentEnvImpl::interface_1;
+    m_external.functions = &JvmtiProfEnv::interface_1;
 
     m_jvmti_env = &jvmti;
 
@@ -86,27 +86,27 @@ ProfAgentEnvImpl::ProfAgentEnvImpl(JavaVM& vm, jvmtiEnv& jvmti)
     assert(jvmti_err == JVMTI_ERROR_NONE);
 }
 
-ProfAgentEnvImpl::~ProfAgentEnvImpl()
+JvmtiProfEnv::~JvmtiProfEnv()
 {
     // TODO
 }
 
-auto ProfAgentEnvImpl::is_valid() const -> bool
+auto JvmtiProfEnv::is_valid() const -> bool
 {
     // TODO handle unaligned structure
-    return m_magic == prof_agent_magic;
+    return m_magic == jvmtiprof_magic;
 }
 
-auto ProfAgentEnvImpl::from_jvmti_env(jvmtiEnv& jvmti_env) -> ProfAgentEnvImpl&
+auto JvmtiProfEnv::from_jvmti_env(jvmtiEnv& jvmti_env) -> JvmtiProfEnv&
 {
-    ProfAgentEnvImpl* result{};
+    JvmtiProfEnv* result{};
     jvmtiError jvmti_err = from_jvmti_env(jvmti_env, result);
     assert(jvmti_err == JVMTI_ERROR_NONE);
     return *result;
 }
 
-auto ProfAgentEnvImpl::from_jvmti_env(jvmtiEnv& jvmti_env,
-                                      ProfAgentEnvImpl*& result) -> jvmtiError
+auto JvmtiProfEnv::from_jvmti_env(jvmtiEnv& jvmti_env,
+                                      JvmtiProfEnv*& result) -> jvmtiError
 {
     // TODO use a hash table with pointer hashing to allow multiple instances
     assert(env_singleton.jvmti_env == &jvmti_env);
@@ -115,7 +115,7 @@ auto ProfAgentEnvImpl::from_jvmti_env(jvmtiEnv& jvmti_env,
     return JVMTI_ERROR_NONE;
 }
 
-auto ProfAgentEnvImpl::intercepts_event(jvmtiEvent event_type) const -> bool
+auto JvmtiProfEnv::intercepts_event(jvmtiEvent event_type) const -> bool
 {
     switch(event_type)
     {
@@ -128,7 +128,7 @@ auto ProfAgentEnvImpl::intercepts_event(jvmtiEvent event_type) const -> bool
     }
 }
 
-auto ProfAgentEnvImpl::set_event_notification_mode(jvmtiEventMode mode,
+auto JvmtiProfEnv::set_event_notification_mode(jvmtiEventMode mode,
                                                    jvmtiEvent event_type,
                                                    jthread event_thread)
         -> jvmtiError
@@ -167,7 +167,7 @@ auto ProfAgentEnvImpl::set_event_notification_mode(jvmtiEventMode mode,
     return JVMTI_ERROR_NONE;
 }
 
-auto ProfAgentEnvImpl::set_event_callbacks(const jvmtiEventCallbacks* callbacks,
+auto JvmtiProfEnv::set_event_callbacks(const jvmtiEventCallbacks* callbacks,
                                            jint size_of_callbacks) -> jvmtiError
 {
     if(size_of_callbacks < 0)
@@ -203,41 +203,41 @@ auto ProfAgentEnvImpl::set_event_callbacks(const jvmtiEventCallbacks* callbacks,
             m_jvmti_env, &mut_callbacks, sizeof(mut_callbacks));
 }
 
-auto ProfAgentEnvImpl::set_event_notification_mode(ProfAgentEventMode mode,
-                                                   ProfAgentEvent event_type,
+auto JvmtiProfEnv::set_event_notification_mode(jvmtiEventMode mode,
+                                                   jvmtiProfEvent event_type,
                                                    jthread event_thread)
-        -> ProfAgentError
+        -> jvmtiProfError
 {
     // TODO check phase?
 
-    if(mode != PROFAGENT_ENABLE && mode != PROFAGENT_DISABLE)
-        return PROFAGENT_ERROR_ILLEGAL_ARGUMENT;
+    if(mode != JVMTI_ENABLE && mode != JVMTI_DISABLE)
+        return JVMTIPROF_ERROR_ILLEGAL_ARGUMENT;
 
     if(event_thread != nullptr)
-        return PROFAGENT_ERROR_ILLEGAL_ARGUMENT;
+        return JVMTIPROF_ERROR_ILLEGAL_ARGUMENT;
 
-    const bool mode_as_bool = (mode == PROFAGENT_ENABLE);
+    const bool mode_as_bool = (mode == JVMTI_ENABLE);
 
     switch(event_type)
     {
-        case PROFAGENT_EVENT_TICK:
+        case JVMTIPROF_EVENT_SAMPLE_APPLICATION_STATE:
             m_event_modes.sample_all_enabled_globally = mode_as_bool;
             break;
         default:
-            return PROFAGENT_ERROR_ILLEGAL_ARGUMENT;
+            return JVMTIPROF_ERROR_ILLEGAL_ARGUMENT;
     }
 
-    return PROFAGENT_ERROR_NONE;
+    return JVMTIPROF_ERROR_NONE;
 }
 
-auto ProfAgentEnvImpl::set_event_callbacks(
-        const ProfAgentEventCallbacks* callbacks, jint size_of_callbacks)
-        -> ProfAgentError
+auto JvmtiProfEnv::set_event_callbacks(
+        const jvmtiProfEventCallbacks* callbacks, jint size_of_callbacks)
+        -> jvmtiProfError
 {
     // TODO check phase?
 
     if(size_of_callbacks < 0)
-        return PROFAGENT_ERROR_ILLEGAL_ARGUMENT;
+        return JVMTIPROF_ERROR_ILLEGAL_ARGUMENT;
 
     if(callbacks == nullptr)
     {
@@ -245,34 +245,34 @@ auto ProfAgentEnvImpl::set_event_callbacks(
     }
     else
     {
-        if(size_of_callbacks != sizeof(ProfAgentEventCallbacks))
-            return PROFAGENT_ERROR_ILLEGAL_ARGUMENT;
+        if(size_of_callbacks != sizeof(jvmtiProfEventCallbacks))
+            return JVMTIPROF_ERROR_ILLEGAL_ARGUMENT;
 
         m_callbacks.sample_all = callbacks->SampleApplicationState;
     }
 
-    return PROFAGENT_ERROR_NONE;
+    return JVMTIPROF_ERROR_NONE;
 }
 
-auto ProfAgentEnvImpl::add_capabilities(
-        const ProfAgentCapabilities& capabilities) -> ProfAgentError
+auto JvmtiProfEnv::add_capabilities(
+        const jvmtiProfCapabilities& capabilities) -> jvmtiProfError
 {
     // TODO check phase
 
     if(capabilities.can_generate_sample_application_state_events)
         m_capabilities.can_generate_sample_application_state_events = true;
 
-    return PROFAGENT_ERROR_NONE;
+    return JVMTIPROF_ERROR_NONE;
 }
 
-void ProfAgentEnvImpl::vm_start(JNIEnv* jni_env)
+void JvmtiProfEnv::vm_start(JNIEnv* jni_env)
 {
 
     if(m_event_modes.vm_start_enabled_globally && m_callbacks.vm_start)
         return m_callbacks.vm_start(m_jvmti_env, jni_env);
 }
 
-void ProfAgentEnvImpl::vm_init(JNIEnv* jni_env, jthread thread)
+void JvmtiProfEnv::vm_init(JNIEnv* jni_env, jthread thread)
 {
     auto thread_class = jni_env->FindClass("java/lang/Thread");
     if(!thread_class)
@@ -302,14 +302,14 @@ void ProfAgentEnvImpl::vm_init(JNIEnv* jni_env, jthread thread)
         return m_callbacks.vm_init(m_jvmti_env, jni_env, thread);
 }
 
-void ProfAgentEnvImpl::vm_death(JNIEnv* jni_env)
+void JvmtiProfEnv::vm_death(JNIEnv* jni_env)
 {
 
     if(m_event_modes.vm_death_enabled_globally && m_callbacks.vm_death)
         return m_callbacks.vm_death(m_jvmti_env, jni_env);
 }
 
-void ProfAgentEnvImpl::sample_consumer_thread()
+void JvmtiProfEnv::sample_consumer_thread()
 {
     puts("OA");
 }

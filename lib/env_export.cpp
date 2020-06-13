@@ -31,7 +31,7 @@ static_assert(static_cast<jint>(JVMTIPROF_SPECIFIC_ERROR_MIN)
     } while(0)
 
 #define PHASE_CHECK(env_impl, ...)                                             \
-    PHASE_CHECK_IMPL(PROFAGENT_ERROR_WRONG_PHASE,                              \
+    PHASE_CHECK_IMPL(JVMTIPROF_ERROR_WRONG_PHASE,                              \
                      env_impl.get_phase() __VA_ARGS__)
 
 #define PHASE_CHECK_JVMTI(jvmti_env, ...)                                      \
@@ -46,18 +46,18 @@ static_assert(static_cast<jint>(JVMTIPROF_SPECIFIC_ERROR_MIN)
 #define PHASE_ANY() ((void)0)
 
 extern "C" {
-using profagent::ProfAgentEnvImpl;
+using jvmtiprof::JvmtiProfEnv;
 
-ProfAgentError JNICALL ProfAgent_Create(JavaVM* vm, jvmtiEnv* jvmti,
-                                        ProfAgentEnv** env,
-                                        ProfAgentVersion version)
+jvmtiProfError JNICALL jvmtiProf_Create(JavaVM* vm, jvmtiEnv* jvmti,
+                                        jvmtiProfEnv** env,
+                                        jvmtiProfVersion version)
 {
-    NULL_CHECK(vm, PROFAGENT_ERROR_NULL_POINTER);
-    NULL_CHECK(jvmti, PROFAGENT_ERROR_NULL_POINTER);
-    NULL_CHECK(env, PROFAGENT_ERROR_NULL_POINTER);
+    NULL_CHECK(vm, JVMTIPROF_ERROR_NULL_POINTER);
+    NULL_CHECK(jvmti, JVMTIPROF_ERROR_NULL_POINTER);
+    NULL_CHECK(env, JVMTIPROF_ERROR_NULL_POINTER);
 
-    if(version != PROFAGENT_VERSION_1_0)
-        return PROFAGENT_ERROR_UNSUPPORTED_VERSION;
+    if(version != JVMTIPROF_VERSION_1_0)
+        return JVMTIPROF_ERROR_UNSUPPORTED_VERSION;
 
     jint jvmti_version;
     jvmtiError jvmti_err = jvmti->GetVersionNumber(&jvmti_version);
@@ -68,7 +68,7 @@ ProfAgentError JNICALL ProfAgent_Create(JavaVM* vm, jvmtiEnv* jvmti,
     if(jvmti_major_version != 1)
     {
         *env = nullptr;
-        return PROFAGENT_ERROR_UNSUPPORTED_VERSION;
+        return JVMTIPROF_ERROR_UNSUPPORTED_VERSION;
     }
 
     jvmtiPhase current_phase;
@@ -77,66 +77,66 @@ ProfAgentError JNICALL ProfAgent_Create(JavaVM* vm, jvmtiEnv* jvmti,
     if(current_phase != JVMTI_PHASE_ONLOAD)
     {
         *env = nullptr;
-        return PROFAGENT_ERROR_WRONG_PHASE;
+        return JVMTIPROF_ERROR_WRONG_PHASE;
     }
 
-    auto impl = new ProfAgentEnvImpl(*vm, *jvmti);
+    auto impl = new JvmtiProfEnv(*vm, *jvmti);
     *env = &impl->external();
-    return PROFAGENT_ERROR_NONE;
+    return JVMTIPROF_ERROR_NONE;
 }
 
-void JNICALL ProfAgent_Destroy(ProfAgentEnv* env)
+void JNICALL jvmtiProf_Destroy(jvmtiProfEnv* env)
 {
     assert(env != nullptr);
-    ProfAgentEnvImpl& impl = ProfAgentEnvImpl::from_external(*env);
+    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*env);
     PHASE_ANY(); // TODO is this actually true?
     delete &impl;
 }
 
-ProfAgentError JNICALL ProfAgent_GetEnv(jvmtiEnv* jvmti, ProfAgentEnv** env)
+jvmtiProfError JNICALL jvmtiProf_GetEnv(jvmtiEnv* jvmti, jvmtiProfEnv** env)
 {
-    NULL_CHECK(jvmti, PROFAGENT_ERROR_NULL_POINTER);
-    NULL_CHECK(env, PROFAGENT_ERROR_NULL_POINTER);
+    NULL_CHECK(jvmti, JVMTIPROF_ERROR_NULL_POINTER);
+    NULL_CHECK(env, JVMTIPROF_ERROR_NULL_POINTER);
     PHASE_ANY();
 
-    ProfAgentEnvImpl* impl;
-    if(ProfAgentEnvImpl::from_jvmti_env(*jvmti, impl) != JVMTI_ERROR_NONE)
-        return PROFAGENT_ERROR_INVALID_ENVIRONMENT;
+    JvmtiProfEnv* impl;
+    if(JvmtiProfEnv::from_jvmti_env(*jvmti, impl) != JVMTI_ERROR_NONE)
+        return JVMTIPROF_ERROR_INVALID_ENVIRONMENT;
 
     *env = &impl->external();
-    return PROFAGENT_ERROR_NONE;
+    return JVMTIPROF_ERROR_NONE;
 }
 
-static ProfAgentError JNICALL ProfAgentEnv_SetEventNotificationMode(
-        ProfAgentEnv* env, ProfAgentEventMode mode, ProfAgentEvent event_type,
+static jvmtiProfError JNICALL jvmtiProfEnv_SetEventNotificationMode(
+        jvmtiProfEnv* env, jvmtiEventMode mode, jvmtiProfEvent event_type,
         jthread event_thread, ...)
 {
-    NULL_CHECK(env, PROFAGENT_ERROR_INVALID_ENVIRONMENT);
+    NULL_CHECK(env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
     // TODO phase check
 
-    ProfAgentEnvImpl& impl = ProfAgentEnvImpl::from_external(*env);
+    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*env);
     return impl.set_event_notification_mode(mode, event_type, event_thread);
 }
 
-static ProfAgentError JNICALL ProfAgentEnv_SetEventCallbacks(
-        ProfAgentEnv* env, const ProfAgentEventCallbacks* callbacks,
+static jvmtiProfError JNICALL jvmtiProfEnv_SetEventCallbacks(
+        jvmtiProfEnv* env, const jvmtiProfEventCallbacks* callbacks,
         jint size_of_callbacks)
 {
-    NULL_CHECK(env, PROFAGENT_ERROR_INVALID_ENVIRONMENT);
+    NULL_CHECK(env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
     // TODO phase check
 
-    ProfAgentEnvImpl& impl = ProfAgentEnvImpl::from_external(*env);
+    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*env);
     return impl.set_event_callbacks(callbacks, size_of_callbacks);
 }
 
-static ProfAgentError JNICALL ProfAgentEnv_AddCapabilities(
-        ProfAgentEnv* env, const ProfAgentCapabilities* capabilities_ptr)
+static jvmtiProfError JNICALL jvmtiProfEnv_AddCapabilities(
+        jvmtiProfEnv* env, const jvmtiProfCapabilities* capabilities_ptr)
 {
-    NULL_CHECK(env, PROFAGENT_ERROR_INVALID_ENVIRONMENT);
-    NULL_CHECK(capabilities_ptr, PROFAGENT_ERROR_NULL_POINTER);
+    NULL_CHECK(env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
+    NULL_CHECK(capabilities_ptr, JVMTIPROF_ERROR_NULL_POINTER);
     // TODO phase check
 
-    ProfAgentEnvImpl& impl = ProfAgentEnvImpl::from_external(*env);
+    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*env);
     return impl.add_capabilities(*capabilities_ptr);
 }
 
@@ -148,8 +148,8 @@ jvmtiError JNICALL jvmti_SetEventNotificationMode(jvmtiEnv* jvmti,
     NULL_CHECK(jvmti, JVMTI_ERROR_INVALID_ENVIRONMENT);
     // TODO efficient phase check
 
-    ProfAgentEnvImpl* impl;
-    jvmtiError jvmti_err = ProfAgentEnvImpl::from_jvmti_env(*jvmti, impl);
+    JvmtiProfEnv* impl;
+    jvmtiError jvmti_err = JvmtiProfEnv::from_jvmti_env(*jvmti, impl);
     if(jvmti_err != JVMTI_ERROR_NONE)
         return jvmti_err;
 
@@ -163,8 +163,8 @@ jvmtiError JNICALL jvmti_SetEventCallbacks(jvmtiEnv* jvmti,
     NULL_CHECK(jvmti, JVMTI_ERROR_INVALID_ENVIRONMENT);
     // TODO efficient phase check
 
-    ProfAgentEnvImpl* impl;
-    jvmtiError jvmti_err = ProfAgentEnvImpl::from_jvmti_env(*jvmti, impl);
+    JvmtiProfEnv* impl;
+    jvmtiError jvmti_err = JvmtiProfEnv::from_jvmti_env(*jvmti, impl);
     if(jvmti_err != JVMTI_ERROR_NONE)
         return jvmti_err;
 
@@ -172,9 +172,9 @@ jvmtiError JNICALL jvmti_SetEventCallbacks(jvmtiEnv* jvmti,
 }
 }
 
-namespace profagent
+namespace jvmtiprof
 {
-const ProfAgentEnvInterface ProfAgentEnvImpl::interface_1 = {
+const jvmtiProfInterface_ JvmtiProfEnv::interface_1 = {
         nullptr, /* DisposeEnvironment */
         nullptr, /* GetJvmtiEnv */
         nullptr, /* GetVersionNumber */
@@ -199,7 +199,7 @@ const ProfAgentEnvInterface ProfAgentEnvImpl::interface_1 = {
         nullptr, /* SetMethodEventFlag */
 };
 
-void ProfAgentEnvImpl::patch_jvmti_interface(jvmtiInterface_1& jvmti_interface)
+void JvmtiProfEnv::patch_jvmti_interface(jvmtiInterface_1& jvmti_interface)
 {
     jvmti_interface.SetEventCallbacks = jvmti_SetEventCallbacks;
     jvmti_interface.SetEventNotificationMode = jvmti_SetEventNotificationMode;
