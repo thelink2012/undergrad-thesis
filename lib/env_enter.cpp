@@ -1,20 +1,45 @@
 #include "env.hpp"
 #include <cassert>
+#include <cstring>
 #include <initializer_list>
+
+//
+// Statically checked assertions for the API
+//
 
 static_assert(static_cast<jint>(JVMTIPROF_SPECIFIC_ERROR_MIN)
                       > static_cast<jint>(JVMTI_ERROR_MAX),
               "jvmtiprof-specific error codes overlap with jvmti error codes.");
 
+//
+// Macros for making the API enter more declarative
+//
+
 #define JVMTIPROF_ERROR_NOT_IMPLEMENTED JVMTIPROF_ERROR_INTERNAL
 
-#define NULL_CHECK(arg, result)                                                \
+/// Checks whether `arg` isn't `nullptr` as a pre-condition. If `nullptr`,
+/// returns `error_code`.
+#define NULL_CHECK(arg, error_code)                                            \
     do                                                                         \
     {                                                                          \
         if((arg) == nullptr)                                                   \
-            return result;                                                     \
+            return (error_code);                                               \
     } while(0)
 
+/// Checks whether `jvmti_env` is attached to an jvmtiprof environment (as a
+/// pre-condition) and returns its implementation in `env_impl_ptr`. Otherwise,
+/// returns an error code.
+#define ENV_FROM_JVMTI(jvmti_env, env_impl_ptr)                                \
+    do                                                                         \
+    {                                                                          \
+        jvmtiError jvmti_err = JvmtiProfEnv::from_jvmti_env((jvmti_env),       \
+                                                            (env_impl_ptr));   \
+        if(jvmti_err != JVMTI_ERROR_NONE)                                      \
+            return jvmti_err;                                                  \
+    } while(0)
+
+/// Checks whether `current_phase` is any of `...` as a pre-condition. If not,
+/// returns `error_value`.
 #define PHASE_CHECK_IMPL(error_value, current_phase, ...)                      \
     do                                                                         \
     {                                                                          \
@@ -29,23 +54,82 @@ static_assert(static_cast<jint>(JVMTIPROF_SPECIFIC_ERROR_MIN)
             }                                                                  \
         }                                                                      \
         if(!in_correct_phase)                                                  \
-            return error_value;                                                \
+            return (error_value);                                              \
     } while(0)
 
+/// Checks whether the current phase (as registered by `env_impl` is any of
+/// `...` as a pre-condition. If not, returns `JVMTIPROF_ERROR_WRONG_PHASE`.
 #define PHASE_CHECK(env_impl, ...)                                             \
     PHASE_CHECK_IMPL(JVMTIPROF_ERROR_WRONG_PHASE,                              \
-                     env_impl.get_phase() __VA_ARGS__)
+                     (env_impl).phase() __VA_ARGS__)
 
-#define PHASE_CHECK_JVMTI(jvmti_env, ...)                                      \
-    do                                                                         \
-    {                                                                          \
-        jvmtiPhase current_phase;                                              \
-        jvmtiError jvmti_err = jvmti->GetPhase(&current_phase);                \
-        assert(jvmti_err == JVMTI_ERROR_NONE);                                 \
-        PHASE_CHECK_IMPL(JVMTI_ERROR_WRONG_PHASE, current_phase __VA_ARGS__)   \
-    } while(0)
+/// Checks whether the current phase (as registered by `env_impl` is any of
+/// `...` as a pre-condition. If not, returns `JVMTI_ERROR_WRONG_PHASE`.
+#define PHASE_CHECK_JVMTI(env_impl, ...)                                       \
+    PHASE_CHECK_IMPL(JVMTI_ERROR_WRONG_PHASE, (env_impl).phase(), __VA_ARGS__)
 
+/// Declares that the API function can be called from any phase.
 #define PHASE_ANY() ((void)0)
+
+/// Helper for converting an error code to its string equivalent.
+#define CASE_ERROR(error_code)                                                 \
+    case error_code:                                                           \
+    {                                                                          \
+        result = #error_code;                                                  \
+        len = sizeof(#error_code) - 1;                                         \
+        break;                                                                 \
+    }
+
+//
+// Helper functions
+//
+
+namespace
+{
+/// Converts `jvmtiProfError` to `jvmtiError` if possible, otherwise returns
+/// `JVMTI_ERROR_INTERNAL`.
+auto to_jvmti_error(jvmtiProfError jvmtiprof_err) -> jvmtiError
+{
+    jint err = static_cast<jint>(jvmtiprof_err);
+    if(err >= JVMTI_ERROR_NONE && err <= JVMTI_ERROR_MAX)
+        return static_cast<jvmtiError>(err);
+    return JVMTI_ERROR_INTERNAL;
+}
+
+/// Converts `jvmtiProfError` to a null-terminated C string.
+auto to_zstring(jvmtiProfError jvmtiprof_err, const char*& result, size_t& len)
+        -> jvmtiProfError
+{
+    result = nullptr;
+    len = 0;
+
+    switch(jvmtiprof_err)
+    {
+        CASE_ERROR(JVMTIPROF_ERROR_NONE)
+        CASE_ERROR(JVMTIPROF_ERROR_NULL_POINTER)
+        CASE_ERROR(JVMTIPROF_ERROR_INVALID_ENVIRONMENT)
+        CASE_ERROR(JVMTIPROF_ERROR_WRONG_PHASE)
+        CASE_ERROR(JVMTIPROF_ERROR_INTERNAL)
+        CASE_ERROR(JVMTIPROF_ERROR_ILLEGAL_ARGUMENT)
+        CASE_ERROR(JVMTIPROF_ERROR_UNSUPPORTED_VERSION)
+
+        // for satisfying -Wswitch
+        case JVMTIPROF_SPECIFIC_ERROR_MIN:
+        case JVMTIPROF_ERROR_MAX:
+            break;
+    }
+
+    // Guard for default values (i.e. not part of jvmtiProfError).
+    // Do not put the default check in the switch because it would suppress
+    // exhaustive check of -Wswitch.
+    if(result == nullptr)
+        return JVMTIPROF_ERROR_ILLEGAL_ARGUMENT;
+
+    return JVMTIPROF_ERROR_NONE;
+}
+}
+
+// end of helper functions
 
 extern "C" {
 using jvmtiprof::JvmtiProfEnv;
@@ -54,13 +138,13 @@ using jvmtiprof::JvmtiProfEnv;
 // jvmtiProf interface
 //
 
-jvmtiProfError JNICALL jvmtiProf_Create(JavaVM* vm, jvmtiEnv* jvmti,
-                                        jvmtiProfEnv** env,
+jvmtiProfError JNICALL jvmtiProf_Create(JavaVM* vm, jvmtiEnv* jvmti_env,
+                                        jvmtiProfEnv** jvmtiprof_env_ptr,
                                         jvmtiProfVersion version)
 {
     NULL_CHECK(vm, JVMTIPROF_ERROR_NULL_POINTER);
-    NULL_CHECK(jvmti, JVMTIPROF_ERROR_NULL_POINTER);
-    NULL_CHECK(env, JVMTIPROF_ERROR_NULL_POINTER);
+    NULL_CHECK(jvmti_env, JVMTIPROF_ERROR_NULL_POINTER);
+    NULL_CHECK(jvmtiprof_env_ptr, JVMTIPROF_ERROR_NULL_POINTER);
 
     if(version != JVMTIPROF_VERSION_1_0)
         return JVMTIPROF_ERROR_UNSUPPORTED_VERSION;
@@ -69,13 +153,13 @@ jvmtiProfError JNICALL jvmtiProf_Create(JavaVM* vm, jvmtiEnv* jvmti,
     // breaking changes in the JVMTI API since the major version is the same
     // between JVMTI and JDK since JDK 9.
     jint jvmti_version;
-    jvmtiError jvmti_err = jvmti->GetVersionNumber(&jvmti_version);
+    jvmtiError jvmti_err = jvmti_env->GetVersionNumber(&jvmti_version);
     assert(jvmti_err == JVMTI_ERROR_NONE);
     const auto jvmti_major_version = (jvmti_version & JVMTI_VERSION_MASK_MAJOR)
                                      >> JVMTI_VERSION_SHIFT_MAJOR;
     if(jvmti_major_version != 1)
     {
-        *env = nullptr;
+        *jvmtiprof_env_ptr = nullptr;
         return JVMTIPROF_ERROR_UNSUPPORTED_VERSION;
     }
 
@@ -85,38 +169,31 @@ jvmtiProfError JNICALL jvmtiProf_Create(JavaVM* vm, jvmtiEnv* jvmti,
     // our internals require the capture of e.g. VMStart which happens just
     // after OnLoad.
     jvmtiPhase current_phase;
-    jvmti_err = jvmti->GetPhase(&current_phase);
+    jvmti_err = jvmti_env->GetPhase(&current_phase);
     assert(jvmti_err == JVMTI_ERROR_NONE);
     if(current_phase != JVMTI_PHASE_ONLOAD)
     {
-        *env = nullptr;
+        *jvmtiprof_env_ptr = nullptr;
         return JVMTIPROF_ERROR_WRONG_PHASE;
     }
 
-    auto impl = new JvmtiProfEnv(*vm, *jvmti);
-    *env = &impl->external();
+    auto impl = new JvmtiProfEnv(*vm, *jvmti_env);
+    *jvmtiprof_env_ptr = &impl->external();
     return JVMTIPROF_ERROR_NONE;
 }
 
-void JNICALL jvmtiProf_Destroy(jvmtiProfEnv* env)
+jvmtiProfError JNICALL jvmtiProf_GetEnv(jvmtiEnv* jvmti_env,
+                                        jvmtiProfEnv** jvmtiprof_env_ptr)
 {
-    assert(env != nullptr);
-    PHASE_ANY(); // TODO(thelink2012): is this actually true?
-    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*env);
-    delete &impl;
-}
-
-jvmtiProfError JNICALL jvmtiProf_GetEnv(jvmtiEnv* jvmti, jvmtiProfEnv** env)
-{
-    NULL_CHECK(jvmti, JVMTIPROF_ERROR_NULL_POINTER);
-    NULL_CHECK(env, JVMTIPROF_ERROR_NULL_POINTER);
+    NULL_CHECK(jvmti_env, JVMTIPROF_ERROR_NULL_POINTER);
+    NULL_CHECK(jvmtiprof_env_ptr, JVMTIPROF_ERROR_NULL_POINTER);
     PHASE_ANY();
 
     JvmtiProfEnv* impl;
-    if(JvmtiProfEnv::from_jvmti_env(*jvmti, impl) != JVMTI_ERROR_NONE)
+    if(JvmtiProfEnv::from_jvmti_env(*jvmti_env, impl) != JVMTI_ERROR_NONE)
         return JVMTIPROF_ERROR_INVALID_ENVIRONMENT;
 
-    *env = &impl->external();
+    *jvmtiprof_env_ptr = &impl->external();
     return JVMTIPROF_ERROR_NONE;
 }
 
@@ -124,55 +201,49 @@ jvmtiProfError JNICALL jvmtiProf_GetEnv(jvmtiEnv* jvmti, jvmtiProfEnv** env)
 // Intercepted jvmti interface
 //
 
-static jvmtiError JNICALL jvmti_DisposeEnvironment(jvmtiEnv* jvmti)
+static jvmtiError JNICALL jvmti_DisposeEnvironment(jvmtiEnv* jvmti_env)
 {
-    NULL_CHECK(jvmti, JVMTI_ERROR_INVALID_ENVIRONMENT);
-    // TODO efficient phase check
+    JvmtiProfEnv* impl;
+    NULL_CHECK(jvmti_env, JVMTI_ERROR_INVALID_ENVIRONMENT);
+    ENV_FROM_JVMTI(*jvmti_env, impl);
+    PHASE_ANY(); // TODO(thelink2012): Is this actually true?
+                 // (see jvmtiProfEnv_DisposeEnvironment)
 
     // Dispose of the jvmtiprof environment associated with the jvmti
-    // environment. This will restore the function table, therefore calling
-    // jvmti->DisposeEnvironment again invokes the upstream (probably
+    // environment. This will restore the jvmti function table, therefore
+    // calling jvmti->DisposeEnvironment again invokes the upstream (probably
     // original) environment disposal function.
-    {
-        JvmtiProfEnv* impl;
-        jvmtiError jvmti_err = JvmtiProfEnv::from_jvmti_env(*jvmti, impl);
-        if(jvmti_err != JVMTI_ERROR_NONE)
-            return jvmti_err;
+    jvmtiProfError jvmtiprof_err = impl->external().DisposeEnvironment();
+    if(jvmtiprof_err != JVMTIPROF_ERROR_NONE)
+        return to_jvmti_error(jvmtiprof_err);
+    else
+        impl = nullptr;
 
-        jvmtiProf_Destroy(&impl->external());
-    }
-
-    return jvmti->DisposeEnvironment();
+    return jvmti_env->DisposeEnvironment();
 }
 
-static jvmtiError JNICALL jvmti_SetEventNotificationMode(jvmtiEnv* jvmti,
+static jvmtiError JNICALL jvmti_SetEventNotificationMode(jvmtiEnv* jvmti_env,
                                                          jvmtiEventMode mode,
                                                          jvmtiEvent event_type,
                                                          jthread event_thread,
                                                          ...)
 {
-    NULL_CHECK(jvmti, JVMTI_ERROR_INVALID_ENVIRONMENT);
-    // TODO efficient phase check
-
     JvmtiProfEnv* impl;
-    jvmtiError jvmti_err = JvmtiProfEnv::from_jvmti_env(*jvmti, impl);
-    if(jvmti_err != JVMTI_ERROR_NONE)
-        return jvmti_err;
+    NULL_CHECK(jvmti_env, JVMTI_ERROR_INVALID_ENVIRONMENT);
+    ENV_FROM_JVMTI(*jvmti_env, impl);
+    PHASE_CHECK_JVMTI(*impl, JVMTI_PHASE_ONLOAD, JVMTI_PHASE_LIVE);
 
     return impl->set_event_notification_mode(mode, event_type, event_thread);
 }
 
-static jvmtiError JNICALL
-jvmti_SetEventCallbacks(jvmtiEnv* jvmti, const jvmtiEventCallbacks* callbacks,
-                        jint size_of_callbacks)
+static jvmtiError JNICALL jvmti_SetEventCallbacks(
+        jvmtiEnv* jvmti_env, const jvmtiEventCallbacks* callbacks,
+        jint size_of_callbacks)
 {
-    NULL_CHECK(jvmti, JVMTI_ERROR_INVALID_ENVIRONMENT);
-    // TODO efficient phase check
-
     JvmtiProfEnv* impl;
-    jvmtiError jvmti_err = JvmtiProfEnv::from_jvmti_env(*jvmti, impl);
-    if(jvmti_err != JVMTI_ERROR_NONE)
-        return jvmti_err;
+    NULL_CHECK(jvmti_env, JVMTI_ERROR_INVALID_ENVIRONMENT);
+    ENV_FROM_JVMTI(*jvmti_env, impl);
+    PHASE_CHECK_JVMTI(*impl, JVMTI_PHASE_ONLOAD, JVMTI_PHASE_LIVE);
 
     return impl->set_event_callbacks(callbacks, size_of_callbacks);
 }
@@ -184,31 +255,75 @@ jvmti_SetEventCallbacks(jvmtiEnv* jvmti, const jvmtiEventCallbacks* callbacks,
 static jvmtiProfError JNICALL
 jvmtiProfEnv_DisposeEnvironment(jvmtiProfEnv* jvmtiprof_env)
 {
-    return JVMTIPROF_ERROR_NOT_IMPLEMENTED;
+    NULL_CHECK(jvmtiprof_env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
+    PHASE_ANY(); // TODO(thelink2012): Is this actually true?
+
+    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*jvmtiprof_env);
+    delete &impl;
+
+    return JVMTIPROF_ERROR_NONE;
 }
 
 static jvmtiProfError JNICALL
 jvmtiProfEnv_GetJvmtiEnv(jvmtiProfEnv* jvmtiprof_env, jvmtiEnv** jvmti_env_ptr)
 {
-    return JVMTIPROF_ERROR_NOT_IMPLEMENTED;
+    NULL_CHECK(jvmtiprof_env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
+    NULL_CHECK(jvmti_env_ptr, JVMTIPROF_ERROR_NULL_POINTER);
+    PHASE_ANY();
+
+    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*jvmtiprof_env);
+    *jvmti_env_ptr = &impl.jvmti_env();
+
+    return JVMTIPROF_ERROR_NONE;
 }
 
 static jvmtiProfError JNICALL
 jvmtiProfEnv_GetVersionNumber(jvmtiProfEnv* jvmtiprof_env, jint* version_ptr)
 {
-    return JVMTIPROF_ERROR_NOT_IMPLEMENTED;
+    NULL_CHECK(jvmtiprof_env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
+    NULL_CHECK(version_ptr, JVMTIPROF_ERROR_NULL_POINTER);
+    PHASE_ANY();
+
+    *version_ptr = JVMTIPROF_VERSION;
+
+    return JVMTIPROF_ERROR_NONE;
 }
 
 static jvmtiProfError JNICALL jvmtiProfEnv_GetErrorName(
         jvmtiProfEnv* jvmtiprof_env, jvmtiProfError error, char** name_ptr)
 {
-    return JVMTIPROF_ERROR_NOT_IMPLEMENTED;
+    NULL_CHECK(jvmtiprof_env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
+    NULL_CHECK(name_ptr, JVMTIPROF_ERROR_NULL_POINTER);
+    PHASE_ANY();
+
+    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*jvmtiprof_env);
+
+    const char* error_string;
+    size_t error_len;
+    jvmtiProfError jvmtiprof_err = to_zstring(error, error_string, error_len);
+    if(jvmtiprof_err != JVMTIPROF_ERROR_NONE)
+        return jvmtiprof_err;
+
+    jvmtiprof_err = impl.allocate(error_len + 1,
+                                  *reinterpret_cast<unsigned char**>(name_ptr));
+    if(jvmtiprof_err != JVMTIPROF_ERROR_NONE)
+        return jvmtiprof_err;
+
+    memcpy(*name_ptr, error_string, error_len);
+    (*name_ptr)[error_len] = '\0';
+
+    return JVMTIPROF_ERROR_NONE;
 }
 
 static jvmtiProfError JNICALL jvmtiProfEnv_SetVerboseFlag(
         jvmtiProfEnv* jvmtiprof_env, jvmtiProfVerboseFlag flag, jboolean value)
 {
-    return JVMTIPROF_ERROR_NOT_IMPLEMENTED;
+    NULL_CHECK(jvmtiprof_env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
+    PHASE_ANY();
+
+    // Since there's no constant in the jvmtiProfVerboseFlag any call to this
+    // method necessarily contains an invalid value for `flag`.
+    return JVMTIPROF_ERROR_ILLEGAL_ARGUMENT;
 }
 
 //
@@ -385,15 +500,16 @@ const jvmtiProfInterface_ JvmtiProfEnv::interface_1 = {
 void JvmtiProfEnv::patch_jvmti_interface(jvmtiInterface_1& jvmti_interface)
 {
     jvmti_interface.DisposeEnvironment = jvmti_DisposeEnvironment;
-
     jvmti_interface.SetEventCallbacks = jvmti_SetEventCallbacks;
     jvmti_interface.SetEventNotificationMode = jvmti_SetEventNotificationMode;
 
     // TODO patch
-    //
     // Get Potential Capabilities
     // Add Capabilities
     // Relinquish Capabilities
     // Get Capabilities
 }
 }
+
+// TODO(thelink2012): JvmtiProfEnv's phase check doesn't contain the primordial
+// phase. Look into the implications of this and if necessary fix it somehow.

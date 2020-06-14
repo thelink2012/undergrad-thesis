@@ -45,12 +45,12 @@ typedef enum
 {
     /* Errors with error code similar to that of the jvmti */
     JVMTIPROF_ERROR_NONE = JVMTI_ERROR_NONE,
-    JVMTIPROF_ERROR_INTERNAL = JVMTI_ERROR_INTERNAL,
     JVMTIPROF_ERROR_NULL_POINTER = JVMTI_ERROR_NULL_POINTER,
-    JVMTIPROF_ERROR_UNSUPPORTED_VERSION = JVMTI_ERROR_UNSUPPORTED_VERSION,
     JVMTIPROF_ERROR_INVALID_ENVIRONMENT = JVMTI_ERROR_INVALID_ENVIRONMENT,
     JVMTIPROF_ERROR_WRONG_PHASE = JVMTI_ERROR_WRONG_PHASE,
+    JVMTIPROF_ERROR_INTERNAL = JVMTI_ERROR_INTERNAL,
     JVMTIPROF_ERROR_ILLEGAL_ARGUMENT = JVMTI_ERROR_ILLEGAL_ARGUMENT,
+    JVMTIPROF_ERROR_UNSUPPORTED_VERSION = JVMTI_ERROR_UNSUPPORTED_VERSION,
 
     /* jvmti-prof specific errors */
     JVMTIPROF_SPECIFIC_ERROR_MIN = 2000,
@@ -58,7 +58,12 @@ typedef enum
     JVMTIPROF_ERROR_MAX = JVMTIPROF_SPECIFIC_ERROR_MAX,
 } jvmtiProfError;
 
+#ifdef __cplusplus
+/* ISO C++ forbids empty unnamed enum [-Wpedantic] */
+typedef enum jvmtiProfVerboseFlag
+#else
 typedef enum
+#endif
 {
 } jvmtiProfVerboseFlag;
 
@@ -420,9 +425,6 @@ JVMTIPROF_IMPORT_OR_EXPORT
 jvmtiProfError JNICALL jvmtiProf_Create(JavaVM* vm, jvmtiEnv* jvmti_env,
                                         jvmtiProfEnv** jvmtiprof_env_ptr,
                                         jvmtiProfVersion version);
-
-JVMTIPROF_IMPORT_OR_EXPORT
-void JNICALL jvmtiProf_Destroy(jvmtiProfEnv* jvmtiprof_env);
 
 JVMTIPROF_IMPORT_OR_EXPORT
 jvmtiProfError JNICALL jvmtiProf_GetEnv(jvmtiEnv* jvmti_env,

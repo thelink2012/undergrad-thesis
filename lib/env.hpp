@@ -30,7 +30,17 @@ public:
     static auto from_jvmti_env(jvmtiEnv& jvmti_env, JvmtiProfEnv*& result)
             -> jvmtiError;
 
+    auto jvmti_env() -> jvmtiEnv& { return *m_jvmti_env; }
+
     auto is_valid() const -> bool;
+
+    static auto to_jvmtiprof_error(jvmtiError jvmti_err) -> jvmtiProfError;
+
+    auto phase() const -> jvmtiPhase { return m_phase; }
+
+    auto allocate(jlong size, unsigned char*& mem) -> jvmtiProfError;
+
+    auto deallocate(unsigned char* mem) -> jvmtiProfError;
 
     auto environment_local_storage() -> const void*
     {
@@ -103,5 +113,7 @@ private:
 
     EventCallbacks m_callbacks{};
     EventModes m_event_modes{};
+
+    jvmtiPhase m_phase;
 };
 }

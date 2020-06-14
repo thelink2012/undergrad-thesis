@@ -63,6 +63,7 @@ JvmtiProfEnv::JvmtiProfEnv(JavaVM& vm, jvmtiEnv& jvmti)
     m_external.functions = &JvmtiProfEnv::interface_1;
 
     m_jvmti_env = &jvmti;
+    m_phase = JVMTI_PHASE_ONLOAD;
 
     m_original_jvmti_interface = jvmti.functions;
     m_patched_jvmti_interface = *m_original_jvmti_interface;
@@ -95,6 +96,32 @@ auto JvmtiProfEnv::is_valid() const -> bool
 {
     // TODO handle unaligned structure
     return m_magic == jvmtiprof_magic;
+}
+
+auto JvmtiProfEnv::allocate(jlong size, unsigned char*& mem_ptr) -> jvmtiProfError
+{
+    assert(size >= 0);
+
+    jvmtiError jvmti_err = m_jvmti_env->Allocate(size, &mem_ptr);
+    if(jvmti_err != JVMTI_ERROR_NONE)
+        return to_jvmtiprof_error(jvmti_err);
+
+    return JVMTIPROF_ERROR_NONE;
+}
+
+auto JvmtiProfEnv::deallocate(unsigned char* mem) -> jvmtiProfError
+{
+    jvmtiError jvmti_err = m_jvmti_env->Deallocate(mem);
+    if(jvmti_err != JVMTI_ERROR_NONE)
+        return to_jvmtiprof_error(jvmti_err);
+
+    return JVMTIPROF_ERROR_NONE;
+}
+
+auto JvmtiProfEnv::to_jvmtiprof_error(jvmtiError jvmti_err) -> jvmtiProfError
+{
+    // TODO(thelink2012):
+    return JVMTIPROF_ERROR_INTERNAL;
 }
 
 auto JvmtiProfEnv::from_jvmti_env(jvmtiEnv& jvmti_env) -> JvmtiProfEnv&
@@ -174,7 +201,7 @@ auto JvmtiProfEnv::set_event_callbacks(const jvmtiEventCallbacks* callbacks,
         return JVMTI_ERROR_ILLEGAL_ARGUMENT;
 
     // TODO explain this check (see code below it)
-    if(size_of_callbacks > sizeof(jvmtiEventCallbacks))
+    if(static_cast<size_t>(size_of_callbacks) > sizeof(jvmtiEventCallbacks))
         return JVMTI_ERROR_ILLEGAL_ARGUMENT;
 
     jvmtiEventCallbacks mut_callbacks;
@@ -267,6 +294,7 @@ auto JvmtiProfEnv::add_capabilities(
 
 void JvmtiProfEnv::vm_start(JNIEnv* jni_env)
 {
+    m_phase = JVMTI_PHASE_START;
 
     if(m_event_modes.vm_start_enabled_globally && m_callbacks.vm_start)
         return m_callbacks.vm_start(m_jvmti_env, jni_env);
@@ -274,6 +302,8 @@ void JvmtiProfEnv::vm_start(JNIEnv* jni_env)
 
 void JvmtiProfEnv::vm_init(JNIEnv* jni_env, jthread thread)
 {
+    m_phase = JVMTI_PHASE_LIVE;
+
     auto thread_class = jni_env->FindClass("java/lang/Thread");
     if(!thread_class)
     {
@@ -307,6 +337,8 @@ void JvmtiProfEnv::vm_death(JNIEnv* jni_env)
 
     if(m_event_modes.vm_death_enabled_globally && m_callbacks.vm_death)
         return m_callbacks.vm_death(m_jvmti_env, jni_env);
+
+    m_phase = JVMTI_PHASE_DEAD;
 }
 
 void JvmtiProfEnv::sample_consumer_thread()
