@@ -1,8 +1,8 @@
-#include "jvmti_agent_thread.hpp"
+#include "agent_thread.hpp"
 #include <cassert>
 #include <exception> // for std::terminate
-#include <utility>   // for std::exchange
 #include <sched.h>   // for sched_yield
+#include <utility>   // for std::exchange
 
 namespace
 {

@@ -1,5 +1,5 @@
 #pragma once
-#include "jvmti_agent_thread.hpp"
+#include "jvm/agent_thread.hpp"
 #include <atomic>
 
 namespace jvmtiprof
