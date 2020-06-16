@@ -33,11 +33,16 @@ public:
     JvmtiAgentThread(const JvmtiAgentThread&) = delete;
     JvmtiAgentThread& operator=(const JvmtiAgentThread&) = delete;
 
-    JvmtiAgentThread(JvmtiAgentThread&& rhs);
-    JvmtiAgentThread& operator=(JvmtiAgentThread&& rhs);
+    JvmtiAgentThread(JvmtiAgentThread&& rhs) noexcept = delete;
+    JvmtiAgentThread& operator=(JvmtiAgentThread&& rhs) noexcept = delete;
 
     /// Terminates the program if the thread hasn't been joined.
     virtual ~JvmtiAgentThread();
+
+    /// Sets the name of the wrapped thread.
+    ///
+    /// The thread must not have started.
+    void set_name(const char* name);
 
     /// Constructs and starts a `java.lang.Thread` through `RunAgentThread`.
     ///
@@ -53,6 +58,9 @@ public:
     /// Behaviour is undefined if called in any other VM phase other than the
     /// live phase.
     void join(JNIEnv* jni_env);
+
+    /// Checks whether there's any thread wrapped in this.
+    bool joinable() const { return m_thread_obj != nullptr; }
 
     /// This method should be overriden as the thread execution body.
     virtual void run() = 0;

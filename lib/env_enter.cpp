@@ -26,6 +26,15 @@ static_assert(static_cast<jint>(JVMTIPROF_SPECIFIC_ERROR_MIN)
             return (error_code);                                               \
     } while(0)
 
+/// Checks for `condition` as a pre-condition. If not satisfied, returns
+/// `error_code
+#define CHECK(condition, error_code)                                           \
+    do                                                                         \
+    {                                                                          \
+        if(!(condition))                                                       \
+            return (error_code);                                               \
+    } while(0)
+
 /// Checks whether `jvmti_env` is attached to an jvmtiprof environment (as a
 /// pre-condition) and returns its implementation in `env_impl_ptr`. Otherwise,
 /// returns an error code.
@@ -422,7 +431,11 @@ static jvmtiProfError JNICALL jvmtiProfEnv_GetProcessorCount(
 static jvmtiProfError JNICALL jvmtiProfEnv_SetApplicationStateSamplingInterval(
         jvmtiProfEnv* jvmtiprof_env, jlong nanos_interval)
 {
-    return JVMTIPROF_ERROR_NOT_IMPLEMENTED;
+    NULL_CHECK(jvmtiprof_env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
+    CHECK(nanos_interval >= 0, JVMTIPROF_ERROR_ILLEGAL_ARGUMENT);
+
+    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*jvmtiprof_env);
+    return impl.set_application_state_sampling_interval(nanos_interval);
 }
 
 static jvmtiProfError JNICALL jvmtiProfEnv_GetSampledCriticalSectionPressure(

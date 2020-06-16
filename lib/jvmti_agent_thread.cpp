@@ -115,21 +115,6 @@ void JNICALL run(jvmtiEnv* jvmti_env, JNIEnv* jni_env, void* data)
 
 namespace jvmtiprof
 {
-JvmtiAgentThread::JvmtiAgentThread(JvmtiAgentThread&& rhs) :
-    JvmtiAgentThread(*rhs.m_jvmti_env, rhs.m_name, rhs.m_priority)
-{
-    m_thread_obj = std::exchange(rhs.m_thread_obj, nullptr);
-}
-
-JvmtiAgentThread& JvmtiAgentThread::operator=(JvmtiAgentThread&& rhs)
-{
-    m_thread_obj = std::exchange(rhs.m_thread_obj, nullptr);
-    m_jvmti_env = rhs.m_jvmti_env;
-    m_name = rhs.m_name;
-    m_priority = rhs.m_priority;
-    return *this;
-}
-
 JvmtiAgentThread::~JvmtiAgentThread()
 {
     if(m_thread_obj != nullptr)
@@ -137,6 +122,13 @@ JvmtiAgentThread::~JvmtiAgentThread()
         // TODO(thelink2012): log error
         std::terminate();
     }
+}
+
+void JvmtiAgentThread::set_name(const char* name)
+{
+    assert(m_thread_obj == nullptr);
+    assert(name != nullptr);
+    m_name = name;
 }
 
 void JvmtiAgentThread::start(JNIEnv* jni_env)

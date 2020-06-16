@@ -29,11 +29,6 @@ void JNICALL vm_death(jvmtiEnv* jvmti_env, JNIEnv* jni_env)
 
     return JvmtiProfEnv::from_jvmti_env(*jvmti_env).vm_death(jni_env);
 }
-
-void JNICALL sample_consumer_thread(jvmtiEnv* jvmti_env, JNIEnv* jni_env, void* self)
-{
-    return static_cast<JvmtiProfEnv*>(self)->sample_consumer_thread();
-}
 }
 
 namespace
@@ -49,6 +44,7 @@ EnvSingleton env_singleton{};
 namespace jvmtiprof
 {
 JvmtiProfEnv::JvmtiProfEnv(JavaVM& vm, jvmtiEnv& jvmti)
+    : m_sampling_thread(jvmti, *this)
 {
     static_assert(sizeof(*jvmti.functions) == sizeof(m_patched_jvmti_interface),
                   "Incompatible JVMTI interfaces");
@@ -90,6 +86,8 @@ JvmtiProfEnv::JvmtiProfEnv(JavaVM& vm, jvmtiEnv& jvmti)
 JvmtiProfEnv::~JvmtiProfEnv()
 {
     // TODO
+    // note that this may be called after death
+    // see death for shutdown procedures otherwise
 }
 
 auto JvmtiProfEnv::is_valid() const -> bool
@@ -292,57 +290,59 @@ auto JvmtiProfEnv::add_capabilities(
     return JVMTIPROF_ERROR_NONE;
 }
 
+auto JvmtiProfEnv::set_application_state_sampling_interval(jlong nanos_interval)
+        -> jvmtiProfError
+{
+    assert(nanos_interval >= 0);
+
+    // TODO check for capability and if not available return error
+
+    m_sampling_thread.set_sampling_interval(nanos_interval);
+
+    return JVMTIPROF_ERROR_NONE;
+}
+
+void JvmtiProfEnv::post_application_state_sample()
+{
+    // TODO(thelink2012):
+
+    if(m_capabilities.can_generate_sample_application_state_events
+       && m_callbacks.sample_all)
+    {
+        // TODO(thelink2012): JNIEnv
+        // TODO(thelink2012): sampling data
+        m_callbacks.sample_all(&external(), m_jvmti_env, nullptr, nullptr);
+    }
+}
+
 void JvmtiProfEnv::vm_start(JNIEnv* jni_env)
 {
     m_phase = JVMTI_PHASE_START;
 
     if(m_event_modes.vm_start_enabled_globally && m_callbacks.vm_start)
-        return m_callbacks.vm_start(m_jvmti_env, jni_env);
+        m_callbacks.vm_start(m_jvmti_env, jni_env);
 }
 
 void JvmtiProfEnv::vm_init(JNIEnv* jni_env, jthread thread)
 {
     m_phase = JVMTI_PHASE_LIVE;
 
-    auto thread_class = jni_env->FindClass("java/lang/Thread");
-    if(!thread_class)
-    {
-        // TODO error
-    }
-
-    // TODO actually give a name to the thread
-    auto init_method_id = jni_env->GetMethodID(thread_class, "<init>", "()V");
-    if(!init_method_id)
-    {
-        // TODO error
-    }
-
-    auto result = jni_env->NewObject(thread_class, init_method_id);
-    if(!result)
-    {
-        // TODO error
-    }
-
-    // TODO which priority do I actually want?
-    jvmtiError jvmti_err = m_jvmti_env->RunAgentThread(
-            result, ::sample_consumer_thread, this, JVMTI_THREAD_MAX_PRIORITY);
-    assert(jvmti_err == JVMTI_ERROR_NONE);
+    m_sampling_thread.start(jni_env);
 
     if(m_event_modes.vm_init_enabled_globally && m_callbacks.vm_init)
-        return m_callbacks.vm_init(m_jvmti_env, jni_env, thread);
+        m_callbacks.vm_init(m_jvmti_env, jni_env, thread);
 }
 
 void JvmtiProfEnv::vm_death(JNIEnv* jni_env)
 {
+    m_sampling_thread.stop_and_join(jni_env);
 
     if(m_event_modes.vm_death_enabled_globally && m_callbacks.vm_death)
-        return m_callbacks.vm_death(m_jvmti_env, jni_env);
+        m_callbacks.vm_death(m_jvmti_env, jni_env);
 
+    // TODO(thelink2012): RAII wrapper for this
     m_phase = JVMTI_PHASE_DEAD;
 }
 
-void JvmtiProfEnv::sample_consumer_thread()
-{
-    puts("OA");
-}
+// TODO do not spawn sampling thead if does not have capability
 }

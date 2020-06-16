@@ -1,5 +1,6 @@
 #pragma once
 #include <jvmtiprof/jvmtiprof.h>
+#include "sampling_thread.hpp"
 #include <cstddef>
 
 namespace jvmtiprof
@@ -70,9 +71,11 @@ public:
 
     auto add_capabilities(const jvmtiProfCapabilities& capabilities)
             -> jvmtiProfError;
-    
-    // TODO private
-    void sample_consumer_thread();
+
+    auto set_application_state_sampling_interval(jlong nanos_interval)
+            -> jvmtiProfError;
+
+    void post_application_state_sample();
 
 private:
     static void patch_jvmti_interface(jvmtiInterface_1&);
@@ -115,5 +118,8 @@ private:
     EventModes m_event_modes{};
 
     jvmtiPhase m_phase;
+
+    
+    SamplingThread m_sampling_thread;
 };
 }
