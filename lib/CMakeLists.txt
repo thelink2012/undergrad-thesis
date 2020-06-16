@@ -1,6 +1,7 @@
 add_library(jvmtiprof STATIC
   env.cpp
   env_enter.cpp
+  jvmti_agent_thread.cpp
 )
 target_compile_features(jvmtiprof PUBLIC cxx_std_14)
 target_compile_definitions(jvmtiprof PRIVATE JVMTIPROF_IMPLEMENTATION)
