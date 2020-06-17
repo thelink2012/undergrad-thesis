@@ -1,4 +1,5 @@
 #pragma once
+#include "jni_ref.hpp"
 #include <jvmti.h>
 
 namespace jvmtiprof
@@ -79,7 +80,7 @@ protected:
     virtual void detach(JNIEnv* jni_env);
 
 private:
-    jthread m_thread_obj{};
+    JNIGlobalRef<jthread> m_thread_obj;
     jvmtiEnv* m_jvmti_env;
     const char* m_name{};
     jint m_priority{JVMTI_THREAD_NORM_PRIORITY};
