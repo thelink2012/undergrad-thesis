@@ -38,18 +38,11 @@ SamplingThread::SamplingThread(jvmtiEnv& jvmti_env,
     set_name(temp_name_buffer);
 
     name_for_monitor(temp_name_buffer, sizeof(temp_name_buffer), jvmtiprof_env);
-    jvmtiError jvmti_err = jvmti_env.CreateRawMonitor(temp_name_buffer,
-                                                      &m_should_stop_monitor);
-    assert(jvmti_err == JVMTI_ERROR_NONE);
+    m_should_stop_monitor = JvmtiMonitor(jvmti_env, temp_name_buffer);
 }
 
 SamplingThread::~SamplingThread()
 {
-    if(m_should_stop_monitor != nullptr)
-    {
-        // TODO(thelink2012): log error
-        std::terminate();
-    }
 }
 
 void SamplingThread::set_sampling_interval(jlong nanos_interval)
@@ -81,17 +74,8 @@ void SamplingThread::stop_and_join(JNIEnv* jni_env)
     m_should_stop_flag.store(true, std::memory_order_relaxed);
 
     {
-        jvmtiError jvmti_err;
-
-        // TODO(thelink2012): RAII wrapper for RawMonitorEnter/Exit
-        jvmti_err = jvmti_env().RawMonitorEnter(m_should_stop_monitor);
-        assert(jvmti_err == JVMTI_ERROR_NONE);
-
-        jvmti_err = jvmti_env().RawMonitorNotifyAll(m_should_stop_monitor);
-        assert(jvmti_err == JVMTI_ERROR_NONE);
-
-        jvmti_err = jvmti_env().RawMonitorExit(m_should_stop_monitor);
-        assert(jvmti_err == JVMTI_ERROR_NONE);
+        JvmtiMonitorGuard guard(jvmti_env(), m_should_stop_monitor);
+        m_should_stop_monitor.notify_all(jvmti_env());
     }
 
     join(jni_env);
@@ -99,15 +83,10 @@ void SamplingThread::stop_and_join(JNIEnv* jni_env)
 
 void SamplingThread::detach(JNIEnv* jni_env)
 {
-    assert(m_should_stop_monitor != nullptr);
+    assert(m_should_stop_monitor);
 
-    // TODO(thelink2012): RAII wrapper except it release()s
-    jvmtiError jvmti_err = jvmti_env().RawMonitorEnter(m_should_stop_monitor);
-    assert(jvmti_err == JVMTI_ERROR_NONE);
-
-    jvmti_err = jvmti_env().DestroyRawMonitor(m_should_stop_monitor);
-    assert(jvmti_err == JVMTI_ERROR_NONE);
-    m_should_stop_monitor = nullptr;
+    m_should_stop_monitor.lock(jvmti_env());
+    m_should_stop_monitor.reset(jvmti_env());
 
     JvmtiAgentThread::detach(jni_env);
 }
@@ -123,32 +102,24 @@ void SamplingThread::run()
 
 void SamplingThread::wait_sampling_interval()
 {
-    // Monitors may wake spuriously as such we have to manually keep track of
+    // Monitors may wakeup spuriously as such we have to manually keep track of
     // how many milliseconds we still have to wait.
     jlong timeout = m_interval_millis.load(std::memory_order_relaxed);
 
     if(timeout <= 0)
         return yield();
 
-    while(timeout > 0
-          && !m_should_stop_flag.load(std::memory_order_acquire))
+    while(timeout > 0 && !m_should_stop_flag.load(std::memory_order_acquire))
     {
         jlong nanos_before_wait, nanos_after_wait;
         jvmtiError jvmti_err;
 
         jvmti_err = jvmti_env().GetTime(&nanos_before_wait);
         assert(jvmti_err == JVMTI_ERROR_NONE);
-        
+
         {
-        // TODO(thelink2012): RAII wrapper for RawMonitorEnter/Exit
-        jvmti_err = jvmti_env().RawMonitorEnter(m_should_stop_monitor);
-        assert(jvmti_err == JVMTI_ERROR_NONE);
-
-        jvmti_err = jvmti_env().RawMonitorWait(m_should_stop_monitor, timeout);
-        assert(jvmti_err == JVMTI_ERROR_NONE);
-
-        jvmti_err = jvmti_env().RawMonitorExit(m_should_stop_monitor);
-        assert(jvmti_err == JVMTI_ERROR_NONE);
+            JvmtiMonitorGuard guard(jvmti_env(), m_should_stop_monitor);
+            m_should_stop_monitor.wait_for(jvmti_env(), timeout);
         }
 
         jvmti_err = jvmti_env().GetTime(&nanos_after_wait);

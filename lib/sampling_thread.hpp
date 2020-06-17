@@ -1,5 +1,6 @@
 #pragma once
 #include "jvm/agent_thread.hpp"
+#include "jvm/monitor.hpp"
 #include <atomic>
 
 namespace jvmtiprof
@@ -62,7 +63,7 @@ private:
 
 private:
     JvmtiProfEnv* m_jvmtiprof_env;
-    jrawMonitorID m_should_stop_monitor{};
+    JvmtiMonitor m_should_stop_monitor;
     std::atomic<jlong> m_interval_millis{10};
     std::atomic<jboolean> m_should_stop_flag{false};
 };
