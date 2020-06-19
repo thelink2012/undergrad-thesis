@@ -51,6 +51,7 @@ typedef enum
     JVMTIPROF_ERROR_INTERNAL = JVMTI_ERROR_INTERNAL,
     JVMTIPROF_ERROR_ILLEGAL_ARGUMENT = JVMTI_ERROR_ILLEGAL_ARGUMENT,
     JVMTIPROF_ERROR_UNSUPPORTED_VERSION = JVMTI_ERROR_UNSUPPORTED_VERSION,
+    JVMTIPROF_ERROR_NOT_AVAILABLE = JVMTI_ERROR_NOT_AVAILABLE,
 
     /* jvmti-prof specific errors */
     JVMTIPROF_SPECIFIC_ERROR_MIN = 2000,
@@ -101,6 +102,9 @@ typedef struct
     unsigned int can_sample_thread_processor : 1;
     unsigned int can_sample_hardware_counters : 1;
     unsigned int can_sample_software_counters : 1;
+    unsigned int : 6; /* ensure `std::has_unique_object_representation` since
+                         bitwise operations will be applied to this struct */
+
 } jvmtiProfCapabilities;
 
 typedef struct

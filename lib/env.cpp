@@ -1,6 +1,7 @@
 #include "env.hpp"
-#include <cstring>
+#include "bit.hpp"
 #include <cassert>
+#include <cstring>
 
 // TODO check thread safety of impl functions
 
@@ -19,8 +20,7 @@ void JNICALL vm_init(jvmtiEnv* jvmti_env, JNIEnv* jni_env, jthread thread)
 {
     fprintf(stderr, "VMINIT\n");
 
-    return JvmtiProfEnv::from_jvmti_env(*jvmti_env)
-            .vm_init(jni_env, thread);
+    return JvmtiProfEnv::from_jvmti_env(*jvmti_env).vm_init(jni_env, thread);
 }
 
 void JNICALL vm_death(jvmtiEnv* jvmti_env, JNIEnv* jni_env)
@@ -43,8 +43,17 @@ EnvSingleton env_singleton{};
 
 namespace jvmtiprof
 {
-JvmtiProfEnv::JvmtiProfEnv(JavaVM& vm, jvmtiEnv& jvmti)
-    : m_sampling_thread(jvmti, *this)
+const jvmtiProfCapabilities JvmtiProfEnv::onload_capabilities
+        = JvmtiProfEnv::compute_onload_capabilities();
+
+const jvmtiProfCapabilities JvmtiProfEnv::always_capabilities
+        = JvmtiProfEnv::compute_always_capabilities();
+
+const jvmtiProfCapabilities JvmtiProfEnv::always_solo_capabilities
+        = JvmtiProfEnv::compute_always_solo_capabilities();
+
+JvmtiProfEnv::JvmtiProfEnv(JavaVM& vm, jvmtiEnv& jvmti) :
+    m_sampling_thread(jvmti, *this)
 {
     static_assert(sizeof(*jvmti.functions) == sizeof(m_patched_jvmti_interface),
                   "Incompatible JVMTI interfaces");
@@ -96,7 +105,8 @@ auto JvmtiProfEnv::is_valid() const -> bool
     return m_magic == jvmtiprof_magic;
 }
 
-auto JvmtiProfEnv::allocate(jlong size, unsigned char*& mem_ptr) -> jvmtiProfError
+auto JvmtiProfEnv::allocate(jlong size, unsigned char*& mem_ptr)
+        -> jvmtiProfError
 {
     assert(size >= 0);
 
@@ -130,8 +140,8 @@ auto JvmtiProfEnv::from_jvmti_env(jvmtiEnv& jvmti_env) -> JvmtiProfEnv&
     return *result;
 }
 
-auto JvmtiProfEnv::from_jvmti_env(jvmtiEnv& jvmti_env,
-                                      JvmtiProfEnv*& result) -> jvmtiError
+auto JvmtiProfEnv::from_jvmti_env(jvmtiEnv& jvmti_env, JvmtiProfEnv*& result)
+        -> jvmtiError
 {
     // TODO use a hash table with pointer hashing to allow multiple instances
     assert(env_singleton.jvmti_env == &jvmti_env);
@@ -154,8 +164,8 @@ auto JvmtiProfEnv::intercepts_event(jvmtiEvent event_type) const -> bool
 }
 
 auto JvmtiProfEnv::set_event_notification_mode(jvmtiEventMode mode,
-                                                   jvmtiEvent event_type,
-                                                   jthread event_thread)
+                                               jvmtiEvent event_type,
+                                               jthread event_thread)
         -> jvmtiError
 {
     if(!intercepts_event(event_type))
@@ -169,7 +179,7 @@ auto JvmtiProfEnv::set_event_notification_mode(jvmtiEventMode mode,
 
     if(event_thread != nullptr)
         return JVMTI_ERROR_ILLEGAL_ARGUMENT;
-    
+
     // TODO check JVMTI_ERROR_INVALID_THREAD and JVMTI_ERROR_THREAD_NOT_ALIVE
     // TODO check JVMTI_ERROR_MUST_POSSESS_CAPABILITY
 
@@ -193,7 +203,7 @@ auto JvmtiProfEnv::set_event_notification_mode(jvmtiEventMode mode,
 }
 
 auto JvmtiProfEnv::set_event_callbacks(const jvmtiEventCallbacks* callbacks,
-                                           jint size_of_callbacks) -> jvmtiError
+                                       jint size_of_callbacks) -> jvmtiError
 {
     if(size_of_callbacks < 0)
         return JVMTI_ERROR_ILLEGAL_ARGUMENT;
@@ -229,8 +239,8 @@ auto JvmtiProfEnv::set_event_callbacks(const jvmtiEventCallbacks* callbacks,
 }
 
 auto JvmtiProfEnv::set_event_notification_mode(jvmtiEventMode mode,
-                                                   jvmtiProfEvent event_type,
-                                                   jthread event_thread)
+                                               jvmtiProfEvent event_type,
+                                               jthread event_thread)
         -> jvmtiProfError
 {
     // TODO check phase?
@@ -255,9 +265,8 @@ auto JvmtiProfEnv::set_event_notification_mode(jvmtiEventMode mode,
     return JVMTIPROF_ERROR_NONE;
 }
 
-auto JvmtiProfEnv::set_event_callbacks(
-        const jvmtiProfEventCallbacks* callbacks, jint size_of_callbacks)
-        -> jvmtiProfError
+auto JvmtiProfEnv::set_event_callbacks(const jvmtiProfEventCallbacks* callbacks,
+                                       jint size_of_callbacks) -> jvmtiProfError
 {
     // TODO check phase?
 
@@ -279,15 +288,145 @@ auto JvmtiProfEnv::set_event_callbacks(
     return JVMTIPROF_ERROR_NONE;
 }
 
-auto JvmtiProfEnv::add_capabilities(
-        const jvmtiProfCapabilities& capabilities) -> jvmtiProfError
+auto JvmtiProfEnv::compute_onload_capabilities() -> jvmtiProfCapabilities
 {
-    // TODO check phase
+    jvmtiProfCapabilities capabilities{};
 
-    if(capabilities.can_generate_sample_application_state_events)
-        m_capabilities.can_generate_sample_application_state_events = true;
+    // Enabling the get of a stack trace in an synchronous manner requires
+    // giving the VM certain capabilities (e.g. -XX:+DebugNonsafepoints)
+    // during the OnLoad phase.
+    /*capabilities.can_get_stack_trace_asynchronously = true;*/
+
+    // The SpecificMethodEntry/Exit events can only be enabled during OnLoad
+    // because it requires intercepting the class loading event (in addition
+    // to the native method bind event). This would be a problem in anything
+    // but OnLoad for two reasons: The first being that we'd need to retransform
+    // classes in further stages, and the second is that since interception
+    // of these JVMTI events will be necessary we need to keep track of
+    // calls to event management API of the JVMTI environment, which
+    // is complicated in further stages.
+    // TODO(thelink2012): Implement retransformation on other stages?
+    // TODO(thelink2012): Intercept in a more intelligent way?
+    /*capabilities.can_generate_specific_method_entry_events = true;
+    capabilities.can_generate_specific_method_exit_events = true;*/
+
+    // The following samples can only be enabled during OnLoad because they
+    // require interception of the monitor events. Since interception of
+    // these JVMTI events will be necessary we need to keep track of calls to
+    // the event management API of the JVMTI environment, which is complicated
+    // in further stages.
+    // TODO(thelink2012): Intercept in a more intelligent way?
+    /*capabilities.can_sample_critical_section_pressure = true;
+    capabilities.can_sample_thread_state = true;
+    capabilities.can_sample_thread_processor = true;*/
+
+    return capabilities;
+}
+
+auto JvmtiProfEnv::compute_always_capabilities() -> jvmtiProfCapabilities
+{
+    jvmtiProfCapabilities capabilities{};
+
+    // Sampling the application state is always available since this capability
+    // is nothing but the spawning of a thread. It's related capabilities (e.g.
+    // critical section pressure) however are an entirely diferent beast.
+    capabilities.can_generate_sample_application_state_events = true;
+
+    // Sampling of hardware and software counters can be enabled/disabled at
+    // any moment since those are unrelated to the VM but the OS/CPU.
+    /*capabilities.can_sample_hardware_counters = true;
+    capabilities.can_sample_software_counters = true;*/
+
+    return capabilities;
+}
+
+auto JvmtiProfEnv::compute_always_solo_capabilities() -> jvmtiProfCapabilities
+{
+    jvmtiProfCapabilities capabilities{};
+
+    // Sampling execution uses OS functionality (timers and signals) therefore
+    // it can be enabled/disabled at any point in time. Although, it can only
+    // be enabled in a single agent a time.
+    /*capabilities.can_generate_sample_execution_events = true;*/
+
+    return capabilities;
+}
+
+auto JvmtiProfEnv::get_capabilities(jvmtiProfCapabilities& capabilities) const
+        -> jvmtiProfError
+{
+    capabilities = m_capabilities;
+    return JVMTIPROF_ERROR_NONE;
+}
+
+auto JvmtiProfEnv::get_potential_capabilities(
+        jvmtiProfCapabilities& capabilities) const -> jvmtiProfError
+{
+    // The set of currently possessed capabilities is certainly available
+    // and is our starting point for the potential capabilities.
+    jvmtiProfError jvmtiprof_err = get_capabilities(capabilities);
+    assert(jvmtiprof_err == JVMTIPROF_ERROR_NONE);
+
+    capabilities = bitwise_or(capabilities, always_capabilities);
+
+    if(m_phase == JVMTI_PHASE_ONLOAD)
+        capabilities = bitwise_or(capabilities, onload_capabilities);
+
+    // TODO(thelink2012): always_solo_capabilities must be checked manually
 
     return JVMTIPROF_ERROR_NONE;
+}
+
+auto JvmtiProfEnv::add_capabilities(const jvmtiProfCapabilities& capabilities)
+        -> jvmtiProfError
+{
+    // TODO(thelink2012): There is a possibility of a race condition here (OS
+    // related, we cannot mutex) where the potential capabilities tell us a
+    // solo capability (e.g. sample execution events) is available, but in the
+    // mean time we go to enable and refresh, the capability is no longer
+    // available. What should we do in such a case?
+
+    jvmtiProfCapabilities potential_capabilities;
+
+    jvmtiProfError jvmtiprof_err = get_potential_capabilities(
+            potential_capabilities);
+    assert(jvmtiprof_err == JVMTIPROF_ERROR_NONE);
+    potential_capabilities = bitwise_and(potential_capabilities, capabilities);
+
+    // Ensure that prohibited capabilities are not being set.
+    // Careful! XORing only produces the expected result because we have
+    // ANDed `potential_capabilities` with `capabilities` above.
+    if(has_any_bit(bitwise_xor(capabilities, potential_capabilities)))
+        return JVMTIPROF_ERROR_NOT_AVAILABLE;
+
+    m_capabilities = bitwise_or(m_capabilities, capabilities);
+    refresh_capabilities();
+
+    return JVMTIPROF_ERROR_NONE;
+}
+
+auto JvmtiProfEnv::relinquish_capabilities(
+        const jvmtiProfCapabilities& capabilities) -> jvmtiProfError
+{
+    // Can only relinquish capabilities that are always present.
+    jvmtiProfCapabilities relinquishable_capabilities = bitwise_or(
+            always_capabilities, always_solo_capabilities);
+
+    // Can only relinquish possessed capabilities.
+    relinquishable_capabilities = bitwise_and(relinquishable_capabilities,
+                                              m_capabilities);
+
+    // Careful! XORing only produces the expected result because
+    // `relinquishable_capabilities` has been ANDed with `m_capabilities` above.
+    m_capabilities = bitwise_xor(m_capabilities, relinquishable_capabilities);
+    refresh_capabilities();
+
+    return JVMTIPROF_ERROR_NONE;
+}
+
+void JvmtiProfEnv::refresh_capabilities()
+{
+    // TODO(thelink2012):
 }
 
 auto JvmtiProfEnv::set_application_state_sampling_interval(jlong nanos_interval)

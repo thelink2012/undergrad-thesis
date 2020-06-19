@@ -1,7 +1,7 @@
 #pragma once
-#include <jvmtiprof/jvmtiprof.h>
 #include "sampling_thread.hpp"
 #include <cstddef>
+#include <jvmtiprof/jvmtiprof.h>
 
 namespace jvmtiprof
 {
@@ -10,7 +10,7 @@ class JvmtiProfEnv
 public:
     JvmtiProfEnv(JavaVM& vm, jvmtiEnv& jvmti);
     ~JvmtiProfEnv();
-    
+
     JvmtiProfEnv(const JvmtiProfEnv&) = delete;
     JvmtiProfEnv& operator=(const JvmtiProfEnv&) = delete;
 
@@ -63,14 +63,26 @@ public:
     auto set_event_callbacks(const jvmtiEventCallbacks* callbacks,
                              jint size_of_callbacks) -> jvmtiError;
 
-    auto set_event_notification_mode(jvmtiEventMode mode, jvmtiProfEvent event_type,
+    auto set_event_notification_mode(jvmtiEventMode mode,
+                                     jvmtiProfEvent event_type,
                                      jthread event_thread) -> jvmtiProfError;
 
     auto set_event_callbacks(const jvmtiProfEventCallbacks* callbacks,
                              jint size_of_callbacks) -> jvmtiProfError;
 
+    auto get_potential_capabilities(jvmtiProfCapabilities& capabilities) const
+            -> jvmtiProfError;
+
     auto add_capabilities(const jvmtiProfCapabilities& capabilities)
             -> jvmtiProfError;
+
+    auto relinquish_capabilities(const jvmtiProfCapabilities& capabilities)
+            -> jvmtiProfError;
+
+    auto get_capabilities(jvmtiProfCapabilities& capabilities) const
+            -> jvmtiProfError;
+
+    void refresh_capabilities();
 
     auto set_application_state_sampling_interval(jlong nanos_interval)
             -> jvmtiProfError;
@@ -80,12 +92,26 @@ public:
 private:
     static void patch_jvmti_interface(jvmtiInterface_1&);
     auto intercepts_event(jvmtiEvent event_type) const -> bool;
+    static auto compute_onload_capabilities() -> jvmtiProfCapabilities;
+    static auto compute_always_capabilities() -> jvmtiProfCapabilities;
+    static auto compute_always_solo_capabilities() -> jvmtiProfCapabilities;
 
 private:
     static const jvmtiProfInterface_ interface_1;
     static constexpr jint jvmtiprof_magic = 0x71EF;
     static constexpr jint dispose_magic = 0xDEFC;
     static constexpr jint bad_magic = 0xDEAD;
+
+    /// Capabilities which are only available during the OnLoad phase.
+    static const jvmtiProfCapabilities onload_capabilities;
+
+    /// Capabilities which are available during any phase and can be enabled in
+    /// multiple environments at once.
+    static const jvmtiProfCapabilities always_capabilities;
+
+    /// Capabilities which can be enabled during any phase but only in a single
+    /// environment at once.
+    static const jvmtiProfCapabilities always_solo_capabilities;
 
     struct EventModes
     {
@@ -94,7 +120,7 @@ private:
         bool vm_death_enabled_globally;
         bool sample_all_enabled_globally;
     };
-    
+
     struct EventCallbacks
     {
         jvmtiEventVMStart vm_start;
@@ -119,7 +145,6 @@ private:
 
     jvmtiPhase m_phase;
 
-    
     SamplingThread m_sampling_thread;
 };
 }

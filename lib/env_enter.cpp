@@ -70,7 +70,7 @@ static_assert(static_cast<jint>(JVMTIPROF_SPECIFIC_ERROR_MIN)
 /// `...` as a pre-condition. If not, returns `JVMTIPROF_ERROR_WRONG_PHASE`.
 #define PHASE_CHECK(env_impl, ...)                                             \
     PHASE_CHECK_IMPL(JVMTIPROF_ERROR_WRONG_PHASE,                              \
-                     (env_impl).phase() __VA_ARGS__)
+                     (env_impl).phase(), __VA_ARGS__)
 
 /// Checks whether the current phase (as registered by `env_impl` is any of
 /// `...` as a pre-condition. If not, returns `JVMTI_ERROR_WRONG_PHASE`.
@@ -121,6 +121,7 @@ auto to_zstring(jvmtiProfError jvmtiprof_err, const char*& result, size_t& len)
         CASE_ERROR(JVMTIPROF_ERROR_INTERNAL)
         CASE_ERROR(JVMTIPROF_ERROR_ILLEGAL_ARGUMENT)
         CASE_ERROR(JVMTIPROF_ERROR_UNSUPPORTED_VERSION)
+        CASE_ERROR(JVMTIPROF_ERROR_NOT_AVAILABLE)
 
         // for satisfying -Wswitch
         case JVMTIPROF_SPECIFIC_ERROR_MIN:
@@ -374,17 +375,21 @@ static jvmtiProfError JNICALL jvmtiProfEnv_GenerateEvents(
 static jvmtiProfError JNICALL jvmtiProfEnv_GetPotentialCapabilities(
         jvmtiProfEnv* jvmtiprof_env, jvmtiProfCapabilities* capabilities_ptr)
 {
-    return JVMTIPROF_ERROR_NOT_IMPLEMENTED;
+    NULL_CHECK(jvmtiprof_env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
+    NULL_CHECK(capabilities_ptr, JVMTIPROF_ERROR_NULL_POINTER);
+    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*jvmtiprof_env);
+    PHASE_CHECK(impl, JVMTI_PHASE_ONLOAD, JVMTI_PHASE_LIVE);
+    return impl.get_potential_capabilities(*capabilities_ptr);
 }
 
-static jvmtiProfError JNICALL jvmtiProfEnv_AddCapabilities(
-        jvmtiProfEnv* env, const jvmtiProfCapabilities* capabilities_ptr)
+static jvmtiProfError JNICALL
+jvmtiProfEnv_AddCapabilities(jvmtiProfEnv* jvmtiprof_env,
+                             const jvmtiProfCapabilities* capabilities_ptr)
 {
-    NULL_CHECK(env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
+    NULL_CHECK(jvmtiprof_env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
     NULL_CHECK(capabilities_ptr, JVMTIPROF_ERROR_NULL_POINTER);
-    // TODO phase check
-
-    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*env);
+    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*jvmtiprof_env);
+    PHASE_CHECK(impl, JVMTI_PHASE_ONLOAD, JVMTI_PHASE_LIVE);
     return impl.add_capabilities(*capabilities_ptr);
 }
 
@@ -392,13 +397,21 @@ static jvmtiProfError JNICALL jvmtiProfEnv_RelinquishCapabilities(
         jvmtiProfEnv* jvmtiprof_env,
         const jvmtiProfCapabilities* capabilities_ptr)
 {
-    return JVMTIPROF_ERROR_NOT_IMPLEMENTED;
+    NULL_CHECK(jvmtiprof_env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
+    NULL_CHECK(capabilities_ptr, JVMTIPROF_ERROR_NULL_POINTER);
+    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*jvmtiprof_env);
+    PHASE_CHECK(impl, JVMTI_PHASE_ONLOAD, JVMTI_PHASE_LIVE);
+    return impl.relinquish_capabilities(*capabilities_ptr);
 }
 
 static jvmtiProfError JNICALL jvmtiProfEnv_GetCapabilities(
         jvmtiProfEnv* jvmtiprof_env, jvmtiProfCapabilities* capabilities_ptr)
 {
-    return JVMTIPROF_ERROR_NOT_IMPLEMENTED;
+    NULL_CHECK(jvmtiprof_env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
+    NULL_CHECK(capabilities_ptr, JVMTIPROF_ERROR_NULL_POINTER);
+    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*jvmtiprof_env);
+    PHASE_CHECK(impl, JVMTI_PHASE_ONLOAD, JVMTI_PHASE_LIVE);
+    return impl.get_capabilities(*capabilities_ptr);
 }
 
 //
