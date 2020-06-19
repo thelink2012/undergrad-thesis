@@ -30,17 +30,17 @@ public:
 
     /// Asks the sampling thread to stop and block the current thread until
     /// the sampling one has stopped.
-    void stop_and_join(JNIEnv* jni_env);
+    void stop_and_join(JNIEnv& jni_env);
 
     /// Starts the sampling thread.
-    void start(JNIEnv* jni_env) override;
+    void start(JNIEnv& jni_env) override;
 
     /// Executes the sampling thread logic in the current thread.
     void run() override;
 
 protected:
     /// Releases resources held by the sampling thread.
-    void detach(JNIEnv* jni_env) override;
+    void detach(JNIEnv& jni_env) override;
 
 private:
     /// Returns a name for the sampling thread monitor into `buffer`.

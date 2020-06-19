@@ -2,6 +2,7 @@
 #include "sampling_thread.hpp"
 #include <cstddef>
 #include <jvmtiprof/jvmtiprof.h>
+#include <memory>
 
 namespace jvmtiprof
 {
@@ -53,6 +54,8 @@ public:
         m_jvmti_local_storage = data;
     }
 
+    auto jni_env() -> JNIEnv*;
+
     void vm_start(JNIEnv* jni_env);
     void vm_init(JNIEnv* jni_env, jthread thread);
     void vm_death(JNIEnv* jni_env);
@@ -82,7 +85,7 @@ public:
     auto get_capabilities(jvmtiProfCapabilities& capabilities) const
             -> jvmtiProfError;
 
-    void refresh_capabilities();
+    void refresh_capabilities(JNIEnv* jni_env);
 
     auto set_application_state_sampling_interval(jlong nanos_interval)
             -> jvmtiProfError;
@@ -132,6 +135,8 @@ private:
     jvmtiProfEnv m_external;
     jint m_magic = jvmtiprof_magic;
 
+    JavaVM* m_vm;
+
     jvmtiEnv* m_jvmti_env;
     const jvmtiInterface_1* m_original_jvmti_interface;
     jvmtiInterface_1 m_patched_jvmti_interface;
@@ -145,6 +150,6 @@ private:
 
     jvmtiPhase m_phase;
 
-    SamplingThread m_sampling_thread;
+    std::unique_ptr<SamplingThread> m_sampling_thread;
 };
 }

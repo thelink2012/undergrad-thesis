@@ -49,7 +49,7 @@ public:
     ///
     /// Behaviour is undefined if called in any other VM phase other than the
     /// live phase.
-    virtual void start(JNIEnv* jni_env);
+    virtual void start(JNIEnv& jni_env);
 
     /// Blocks the current thread until the wrapped thread finishes execution.
     ///
@@ -58,7 +58,7 @@ public:
     ///
     /// Behaviour is undefined if called in any other VM phase other than the
     /// live phase.
-    void join(JNIEnv* jni_env);
+    void join(JNIEnv& jni_env);
 
     /// Checks whether there's any thread wrapped in this.
     bool joinable() const { return m_thread_obj != nullptr; }
@@ -77,7 +77,7 @@ protected:
     /// Detaches the `java.lang.Thread` from this wrapper.
     ///
     /// This is invoked at the end of `join()`.
-    virtual void detach(JNIEnv* jni_env);
+    virtual void detach(JNIEnv& jni_env);
 
 private:
     JNIGlobalRef<jthread> m_thread_obj;

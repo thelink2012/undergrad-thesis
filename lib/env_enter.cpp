@@ -122,6 +122,8 @@ auto to_zstring(jvmtiProfError jvmtiprof_err, const char*& result, size_t& len)
         CASE_ERROR(JVMTIPROF_ERROR_ILLEGAL_ARGUMENT)
         CASE_ERROR(JVMTIPROF_ERROR_UNSUPPORTED_VERSION)
         CASE_ERROR(JVMTIPROF_ERROR_NOT_AVAILABLE)
+        CASE_ERROR(JVMTIPROF_ERROR_MUST_POSSESS_CAPABILITY)
+        CASE_ERROR(JVMTIPROF_ERROR_UNATTACHED_THREAD)
 
         // for satisfying -Wswitch
         case JVMTIPROF_SPECIFIC_ERROR_MIN:
@@ -410,7 +412,7 @@ static jvmtiProfError JNICALL jvmtiProfEnv_GetCapabilities(
     NULL_CHECK(jvmtiprof_env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
     NULL_CHECK(capabilities_ptr, JVMTIPROF_ERROR_NULL_POINTER);
     JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*jvmtiprof_env);
-    PHASE_CHECK(impl, JVMTI_PHASE_ONLOAD, JVMTI_PHASE_LIVE);
+    PHASE_ANY();
     return impl.get_capabilities(*capabilities_ptr);
 }
 

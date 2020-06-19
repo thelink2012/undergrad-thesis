@@ -4,6 +4,7 @@
 #include <cstring>
 
 // TODO check thread safety of impl functions
+// TODO should unattached thread checking happen in every env enter?
 
 namespace
 {
@@ -52,8 +53,7 @@ const jvmtiProfCapabilities JvmtiProfEnv::always_capabilities
 const jvmtiProfCapabilities JvmtiProfEnv::always_solo_capabilities
         = JvmtiProfEnv::compute_always_solo_capabilities();
 
-JvmtiProfEnv::JvmtiProfEnv(JavaVM& vm, jvmtiEnv& jvmti) :
-    m_sampling_thread(jvmti, *this)
+JvmtiProfEnv::JvmtiProfEnv(JavaVM& vm, jvmtiEnv& jvmti)
 {
     static_assert(sizeof(*jvmti.functions) == sizeof(m_patched_jvmti_interface),
                   "Incompatible JVMTI interfaces");
@@ -66,6 +66,8 @@ JvmtiProfEnv::JvmtiProfEnv(JavaVM& vm, jvmtiEnv& jvmti) :
     jvmtiError jvmti_err;
 
     m_external.functions = &JvmtiProfEnv::interface_1;
+
+    m_vm = &vm;
 
     m_jvmti_env = &jvmti;
     m_phase = JVMTI_PHASE_ONLOAD;
@@ -355,6 +357,8 @@ auto JvmtiProfEnv::compute_always_solo_capabilities() -> jvmtiProfCapabilities
 auto JvmtiProfEnv::get_capabilities(jvmtiProfCapabilities& capabilities) const
         -> jvmtiProfError
 {
+    // NOTE: This may be called from any phase, operations here must avoid
+    // touching the VM.
     capabilities = m_capabilities;
     return JVMTIPROF_ERROR_NONE;
 }
@@ -386,6 +390,13 @@ auto JvmtiProfEnv::add_capabilities(const jvmtiProfCapabilities& capabilities)
     // mean time we go to enable and refresh, the capability is no longer
     // available. What should we do in such a case?
 
+    JNIEnv* jni_env{};
+    if(m_phase == JVMTI_PHASE_LIVE)
+    {
+        if((jni_env = this->jni_env()) == nullptr)
+            return JVMTIPROF_ERROR_UNATTACHED_THREAD;
+    }
+
     jvmtiProfCapabilities potential_capabilities;
 
     jvmtiProfError jvmtiprof_err = get_potential_capabilities(
@@ -400,7 +411,7 @@ auto JvmtiProfEnv::add_capabilities(const jvmtiProfCapabilities& capabilities)
         return JVMTIPROF_ERROR_NOT_AVAILABLE;
 
     m_capabilities = bitwise_or(m_capabilities, capabilities);
-    refresh_capabilities();
+    refresh_capabilities(jni_env);
 
     return JVMTIPROF_ERROR_NONE;
 }
@@ -408,6 +419,13 @@ auto JvmtiProfEnv::add_capabilities(const jvmtiProfCapabilities& capabilities)
 auto JvmtiProfEnv::relinquish_capabilities(
         const jvmtiProfCapabilities& capabilities) -> jvmtiProfError
 {
+    JNIEnv* jni_env{};
+    if(m_phase == JVMTI_PHASE_LIVE)
+    {
+        if((jni_env = this->jni_env()) == nullptr)
+            return JVMTIPROF_ERROR_UNATTACHED_THREAD;
+    }
+
     // Can only relinquish capabilities that are always present.
     jvmtiProfCapabilities relinquishable_capabilities = bitwise_or(
             always_capabilities, always_solo_capabilities);
@@ -419,14 +437,63 @@ auto JvmtiProfEnv::relinquish_capabilities(
     // Careful! XORing only produces the expected result because
     // `relinquishable_capabilities` has been ANDed with `m_capabilities` above.
     m_capabilities = bitwise_xor(m_capabilities, relinquishable_capabilities);
-    refresh_capabilities();
+    refresh_capabilities(jni_env);
 
     return JVMTIPROF_ERROR_NONE;
 }
 
-void JvmtiProfEnv::refresh_capabilities()
+void JvmtiProfEnv::refresh_capabilities(JNIEnv* jni_env)
 {
-    // TODO(thelink2012):
+    const auto is_vm_live = (m_phase == JVMTI_PHASE_LIVE);
+
+    if(is_vm_live)
+        assert(jni_env != nullptr);
+
+    if(m_capabilities.can_generate_sample_application_state_events)
+    {
+        if(m_sampling_thread == nullptr)
+        {
+            m_sampling_thread = std::make_unique<SamplingThread>(*m_jvmti_env,
+                                                                 *this);
+            // When the VM is not yet live, the `vm_init` event is responsible
+            // for starting the sampling thread. Otherwise, we must do so.
+            if(is_vm_live)
+            {
+                assert(jni_env != nullptr);
+                m_sampling_thread->start(*jni_env);
+            }
+        }
+    }
+    else
+    {
+        if(m_sampling_thread != nullptr)
+        {
+            if(is_vm_live)
+                m_sampling_thread->stop_and_join(*jni_env);
+            m_sampling_thread.reset();
+        }
+    }
+}
+
+auto JvmtiProfEnv::jni_env() -> JNIEnv*
+{
+    JNIEnv* env;
+
+    // TODO(thelink2012): Provide a faster implementation that caches this.
+
+    jint jni_err = m_vm->GetEnv(reinterpret_cast<void**>(&env),
+                                JNI_VERSION_1_6);
+    if(jni_err == JNI_OK)
+        return env;
+    else if(jni_err == JNI_EDETACHED)
+        return nullptr;
+    else
+    {
+        // TODO(thelink2012): Log failure, should not happen. The only other
+        // error case is JNI_EVERSION. We should probably test this during
+        // construction?
+        return nullptr;
+    }
 }
 
 auto JvmtiProfEnv::set_application_state_sampling_interval(jlong nanos_interval)
@@ -434,9 +501,11 @@ auto JvmtiProfEnv::set_application_state_sampling_interval(jlong nanos_interval)
 {
     assert(nanos_interval >= 0);
 
-    // TODO check for capability and if not available return error
+    if(!m_capabilities.can_generate_sample_application_state_events)
+        return JVMTIPROF_ERROR_MUST_POSSESS_CAPABILITY;
 
-    m_sampling_thread.set_sampling_interval(nanos_interval);
+    assert(m_sampling_thread != nullptr);
+    m_sampling_thread->set_sampling_interval(nanos_interval);
 
     return JVMTIPROF_ERROR_NONE;
 }
@@ -466,7 +535,15 @@ void JvmtiProfEnv::vm_init(JNIEnv* jni_env, jthread thread)
 {
     m_phase = JVMTI_PHASE_LIVE;
 
-    m_sampling_thread.start(jni_env);
+    if(m_capabilities.can_generate_sample_application_state_events)
+    {
+        assert(m_sampling_thread != nullptr);
+        m_sampling_thread->start(*jni_env);
+    }
+    else
+    {
+        assert(m_sampling_thread == nullptr);
+    }
 
     if(m_event_modes.vm_init_enabled_globally && m_callbacks.vm_init)
         m_callbacks.vm_init(m_jvmti_env, jni_env, thread);
@@ -474,13 +551,24 @@ void JvmtiProfEnv::vm_init(JNIEnv* jni_env, jthread thread)
 
 void JvmtiProfEnv::vm_death(JNIEnv* jni_env)
 {
-    m_sampling_thread.stop_and_join(jni_env);
+    if(m_capabilities.can_generate_sample_application_state_events)
+    {
+        assert(m_sampling_thread != nullptr);
+        m_sampling_thread->stop_and_join(*jni_env);
+        // TODO(thelink2012): Should reset the unique_ptr?
+    }
+    else
+    {
+        assert(m_sampling_thread == nullptr);
+    }
 
     if(m_event_modes.vm_death_enabled_globally && m_callbacks.vm_death)
         m_callbacks.vm_death(m_jvmti_env, jni_env);
 
     // TODO(thelink2012): RAII wrapper for this
     m_phase = JVMTI_PHASE_DEAD;
+
+    // TODO(thelink2012): Maybe we should dettach from the JVMTI env here?
 }
 
 // TODO do not spawn sampling thead if does not have capability

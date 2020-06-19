@@ -55,7 +55,7 @@ void SamplingThread::set_sampling_interval(jlong nanos_interval)
                             std::memory_order_relaxed);
 }
 
-void SamplingThread::start(JNIEnv* jni_env)
+void SamplingThread::start(JNIEnv& jni_env)
 {
     assert(!joinable());
 
@@ -65,7 +65,7 @@ void SamplingThread::start(JNIEnv* jni_env)
     JvmtiAgentThread::start(jni_env);
 }
 
-void SamplingThread::stop_and_join(JNIEnv* jni_env)
+void SamplingThread::stop_and_join(JNIEnv& jni_env)
 {
     assert(joinable());
 
@@ -81,7 +81,7 @@ void SamplingThread::stop_and_join(JNIEnv* jni_env)
     join(jni_env);
 }
 
-void SamplingThread::detach(JNIEnv* jni_env)
+void SamplingThread::detach(JNIEnv& jni_env)
 {
     assert(m_should_stop_monitor);
 
