@@ -1,5 +1,6 @@
 #pragma once
 #include "sampling_thread.hpp"
+#include "execution_sampler.hpp"
 #include <cstddef>
 #include <jvmtiprof/jvmtiprof.h>
 #include <memory>
@@ -90,14 +91,18 @@ public:
     auto set_application_state_sampling_interval(jlong nanos_interval)
             -> jvmtiProfError;
 
+    auto set_execution_sampling_interval(jlong nanos_interval)
+            -> jvmtiProfError;
+
     void post_application_state_sample();
+
+    void post_execution_sample();
 
 private:
     static void patch_jvmti_interface(jvmtiInterface_1&);
     auto intercepts_event(jvmtiEvent event_type) const -> bool;
     static auto compute_onload_capabilities() -> jvmtiProfCapabilities;
     static auto compute_always_capabilities() -> jvmtiProfCapabilities;
-    static auto compute_always_solo_capabilities() -> jvmtiProfCapabilities;
 
 private:
     static const jvmtiProfInterface_ interface_1;
@@ -112,16 +117,13 @@ private:
     /// multiple environments at once.
     static const jvmtiProfCapabilities always_capabilities;
 
-    /// Capabilities which can be enabled during any phase but only in a single
-    /// environment at once.
-    static const jvmtiProfCapabilities always_solo_capabilities;
-
     struct EventModes
     {
         bool vm_start_enabled_globally;
         bool vm_init_enabled_globally;
         bool vm_death_enabled_globally;
         bool sample_all_enabled_globally;
+        bool sample_execution_enabled_globally;
     };
 
     struct EventCallbacks
@@ -130,6 +132,7 @@ private:
         jvmtiEventVMInit vm_init;
         jvmtiEventVMDeath vm_death;
         jvmtiProfEventSampleApplicationState sample_all;
+        jvmtiProfEventSampleExecution sample_execution;
     };
 
     jvmtiProfEnv m_external;
@@ -151,5 +154,6 @@ private:
     jvmtiPhase m_phase;
 
     std::unique_ptr<SamplingThread> m_sampling_thread;
+    std::unique_ptr<ExecutionSampler> m_execution_sampler;
 };
 }

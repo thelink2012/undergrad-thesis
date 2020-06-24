@@ -5,6 +5,7 @@
 
 // TODO check thread safety of impl functions
 // TODO should unattached thread checking happen in every env enter?
+// TODO take care of event callback invoking DisposeEnvironment (defer delete)
 
 namespace
 {
@@ -49,9 +50,6 @@ const jvmtiProfCapabilities JvmtiProfEnv::onload_capabilities
 
 const jvmtiProfCapabilities JvmtiProfEnv::always_capabilities
         = JvmtiProfEnv::compute_always_capabilities();
-
-const jvmtiProfCapabilities JvmtiProfEnv::always_solo_capabilities
-        = JvmtiProfEnv::compute_always_solo_capabilities();
 
 JvmtiProfEnv::JvmtiProfEnv(JavaVM& vm, jvmtiEnv& jvmti)
 {
@@ -253,13 +251,26 @@ auto JvmtiProfEnv::set_event_notification_mode(jvmtiEventMode mode,
     if(event_thread != nullptr)
         return JVMTIPROF_ERROR_ILLEGAL_ARGUMENT;
 
+    // TODO(thelink2012): Per-thread sample_execution
+
     const bool mode_as_bool = (mode == JVMTI_ENABLE);
 
     switch(event_type)
     {
         case JVMTIPROF_EVENT_SAMPLE_APPLICATION_STATE:
+        {
+            if(!m_capabilities.can_generate_sample_application_state_events)
+                return JVMTIPROF_ERROR_MUST_POSSESS_CAPABILITY;
             m_event_modes.sample_all_enabled_globally = mode_as_bool;
             break;
+        }
+        case JVMTIPROF_EVENT_SAMPLE_EXECUTION:
+        {
+            if(!m_capabilities.can_generate_sample_execution_events)
+                return JVMTIPROF_ERROR_MUST_POSSESS_CAPABILITY;
+            m_event_modes.sample_execution_enabled_globally = mode_as_bool;
+            break;
+        }
         default:
             return JVMTIPROF_ERROR_ILLEGAL_ARGUMENT;
     }
@@ -278,6 +289,7 @@ auto JvmtiProfEnv::set_event_callbacks(const jvmtiProfEventCallbacks* callbacks,
     if(callbacks == nullptr)
     {
         m_callbacks.sample_all = nullptr;
+        m_callbacks.sample_execution = nullptr;
     }
     else
     {
@@ -285,6 +297,7 @@ auto JvmtiProfEnv::set_event_callbacks(const jvmtiProfEventCallbacks* callbacks,
             return JVMTIPROF_ERROR_ILLEGAL_ARGUMENT;
 
         m_callbacks.sample_all = callbacks->SampleApplicationState;
+        m_callbacks.sample_execution = callbacks->SampleExecution;
     }
 
     return JVMTIPROF_ERROR_NONE;
@@ -334,22 +347,14 @@ auto JvmtiProfEnv::compute_always_capabilities() -> jvmtiProfCapabilities
     // critical section pressure) however are an entirely diferent beast.
     capabilities.can_generate_sample_application_state_events = true;
 
+    // Sampling execution uses OS functionality (timers and signals) therefore
+    // it can be enabled/disabled at any point in time.
+    capabilities.can_generate_sample_execution_events = true;
+
     // Sampling of hardware and software counters can be enabled/disabled at
     // any moment since those are unrelated to the VM but the OS/CPU.
     /*capabilities.can_sample_hardware_counters = true;
     capabilities.can_sample_software_counters = true;*/
-
-    return capabilities;
-}
-
-auto JvmtiProfEnv::compute_always_solo_capabilities() -> jvmtiProfCapabilities
-{
-    jvmtiProfCapabilities capabilities{};
-
-    // Sampling execution uses OS functionality (timers and signals) therefore
-    // it can be enabled/disabled at any point in time. Although, it can only
-    // be enabled in a single agent a time.
-    /*capabilities.can_generate_sample_execution_events = true;*/
 
     return capabilities;
 }
@@ -376,20 +381,12 @@ auto JvmtiProfEnv::get_potential_capabilities(
     if(m_phase == JVMTI_PHASE_ONLOAD)
         capabilities = bitwise_or(capabilities, onload_capabilities);
 
-    // TODO(thelink2012): always_solo_capabilities must be checked manually
-
     return JVMTIPROF_ERROR_NONE;
 }
 
 auto JvmtiProfEnv::add_capabilities(const jvmtiProfCapabilities& capabilities)
         -> jvmtiProfError
 {
-    // TODO(thelink2012): There is a possibility of a race condition here (OS
-    // related, we cannot mutex) where the potential capabilities tell us a
-    // solo capability (e.g. sample execution events) is available, but in the
-    // mean time we go to enable and refresh, the capability is no longer
-    // available. What should we do in such a case?
-
     JNIEnv* jni_env{};
     if(m_phase == JVMTI_PHASE_LIVE)
     {
@@ -426,9 +423,8 @@ auto JvmtiProfEnv::relinquish_capabilities(
             return JVMTIPROF_ERROR_UNATTACHED_THREAD;
     }
 
-    // Can only relinquish capabilities that are always present.
-    jvmtiProfCapabilities relinquishable_capabilities = bitwise_or(
-            always_capabilities, always_solo_capabilities);
+    // Can only relinquish capabilities that are always disableable.
+    jvmtiProfCapabilities relinquishable_capabilities = always_capabilities;
 
     // Can only relinquish possessed capabilities.
     relinquishable_capabilities = bitwise_and(relinquishable_capabilities,
@@ -473,6 +469,36 @@ void JvmtiProfEnv::refresh_capabilities(JNIEnv* jni_env)
             m_sampling_thread.reset();
         }
     }
+
+    if(m_capabilities.can_generate_sample_execution_events)
+    {
+        if(m_execution_sampler == nullptr)
+        {
+            if(ExecutionSampler::add_capability())
+            {
+                m_execution_sampler = std::make_unique<ExecutionSampler>(*this);
+
+                // When the VM is not yet live, the `vm_init` event is responsible
+                // for starting the sampling timer. Otherwise, we must do so.
+                if(is_vm_live)
+                    m_execution_sampler->start();
+            }
+            else
+            {
+                m_capabilities.can_generate_sample_execution_events = false;
+            }
+        }
+    }
+    else
+    {
+        if(m_execution_sampler != nullptr)
+        {
+            if(is_vm_live)
+                m_execution_sampler->stop();
+            m_execution_sampler.reset();
+            ExecutionSampler::relinquish_capability();
+        }
+    }
 }
 
 auto JvmtiProfEnv::jni_env() -> JNIEnv*
@@ -510,16 +536,47 @@ auto JvmtiProfEnv::set_application_state_sampling_interval(jlong nanos_interval)
     return JVMTIPROF_ERROR_NONE;
 }
 
+auto JvmtiProfEnv::set_execution_sampling_interval(jlong nanos_interval)
+        -> jvmtiProfError
+{
+    assert(nanos_interval >= 0);
+
+    if(!m_capabilities.can_generate_sample_execution_events)
+        return JVMTIPROF_ERROR_MUST_POSSESS_CAPABILITY;
+
+    assert(m_execution_sampler != nullptr);
+    m_execution_sampler->set_sampling_interval(nanos_interval);
+
+    return JVMTIPROF_ERROR_NONE;
+}
+
 void JvmtiProfEnv::post_application_state_sample()
 {
-    // TODO(thelink2012):
+    // NOTE: This method must be simple enough to be async-signal safe.
+
+    // TODO(thelink2012): Race condition?
 
     if(m_capabilities.can_generate_sample_application_state_events
-       && m_callbacks.sample_all)
+       && m_event_modes.sample_all_enabled_globally && m_callbacks.sample_all)
     {
         // TODO(thelink2012): JNIEnv
         // TODO(thelink2012): sampling data
         m_callbacks.sample_all(&external(), m_jvmti_env, nullptr, nullptr);
+    }
+}
+
+void JvmtiProfEnv::post_execution_sample()
+{
+    // TODO(thelink2012): Race condition?
+
+    if(m_capabilities.can_generate_sample_execution_events
+       && m_event_modes.sample_execution_enabled_globally
+       && m_callbacks.sample_execution)
+    {
+        // TODO(thelink2012): JNIEnv
+        // TODO(thelink2012): jthread
+        m_callbacks.sample_execution(&external(), m_jvmti_env, nullptr,
+                                     nullptr);
     }
 }
 
@@ -545,6 +602,16 @@ void JvmtiProfEnv::vm_init(JNIEnv* jni_env, jthread thread)
         assert(m_sampling_thread == nullptr);
     }
 
+    if(m_capabilities.can_generate_sample_execution_events)
+    {
+        assert(m_execution_sampler != nullptr);
+        m_execution_sampler->start();
+    }
+    else
+    {
+        assert(m_execution_sampler == nullptr);
+    }
+
     if(m_event_modes.vm_init_enabled_globally && m_callbacks.vm_init)
         m_callbacks.vm_init(m_jvmti_env, jni_env, thread);
 }
@@ -560,6 +627,17 @@ void JvmtiProfEnv::vm_death(JNIEnv* jni_env)
     else
     {
         assert(m_sampling_thread == nullptr);
+    }
+
+    if(m_capabilities.can_generate_sample_execution_events)
+    {
+        assert(m_execution_sampler != nullptr);
+        m_execution_sampler->stop();
+        // TODO(thelink2012): Should reset the unique_ptr?
+    }
+    else
+    {
+        assert(m_execution_sampler == nullptr);
     }
 
     if(m_event_modes.vm_death_enabled_globally && m_callbacks.vm_death)

@@ -423,7 +423,11 @@ static jvmtiProfError JNICALL jvmtiProfEnv_GetCapabilities(
 static jvmtiProfError JNICALL jvmtiProfEnv_SetExecutionSamplingInterval(
         jvmtiProfEnv* jvmtiprof_env, jlong nanos_interval)
 {
-    return JVMTIPROF_ERROR_NOT_IMPLEMENTED;
+    NULL_CHECK(jvmtiprof_env, JVMTIPROF_ERROR_INVALID_ENVIRONMENT);
+    CHECK(nanos_interval >= 0, JVMTIPROF_ERROR_ILLEGAL_ARGUMENT);
+
+    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*jvmtiprof_env);
+    return impl.set_execution_sampling_interval(nanos_interval);
 }
 
 static jvmtiProfError JNICALL jvmtiProfEnv_GetStackTraceAsync(
