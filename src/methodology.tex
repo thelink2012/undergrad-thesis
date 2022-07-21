@@ -1,5 +1,96 @@
+% EXPLAIN WHY NOT USING JVMTI EXTENSION MECHANISM
+
+% TODO explain none of the functions is CALLBACK SAFE
+
 \xchapter{Methodology}{}
 
+\section{Programming Interface} \label{sec:api}
+
+In order to use JVMTIPROF, the agent must create and inject an JVMTIPROF environment into an existing JVMTI one. This can be done through the \hyperref[api:jvmtiProf_Create]{\texttt{jvmtiProf\_Create}} function.
+
+Multiple JVMTIPROF environments can be injected into an JVMTI environment. Each environment retains its own state. For example, each has its own logging verbosity, configured capabilities, and registered events.
+
+%The programming interface is used to communicate with the infrastructure for profiling
+
+%The programming interface of jvmtiprof follows the same conventions as that of JVMTI
+
+%etc explain error codes, return values, references, prerequisite states (see jvmti docs)
+
+
+\subsection{Extension Injection}
+
+% TODO FIX subsubsection not creating newline (weird behaviour)
+
+\subsubsection*{jvmtiProf\_Create} \label{api:jvmtiProf_Create} *
+
+\bigskip
+\begin{lstlisting}[language=C++]
+jvmtiProfError jvmtiProf_Create(JavaVM* vm,
+                                jvmtiEnv* jvmti_env,
+                                jvmtiProfEnv** jvmtiprof_env_ptr,
+                                jvmtiProfVersion version);
+\end{lstlisting}
+
+\bigskip
+\noindent \textbf{DESCRIPTION}
+
+Creates a JVMTIPROF environment and injects it into the given JVMTI environment.
+
+\bigskip
+\noindent \textbf{PHASE}
+
+This function may only be called during the OnLoad phase.
+
+\bigskip
+\noindent \textbf{CAPABILITIES}
+
+Required functionality.
+
+\bigskip
+\noindent \textbf{PARAMETERS}
+
+\texttt{vm} The virtual machine instance on which the \texttt{jvmti\_env} is installed in. Must not be \texttt{NULL}.
+
+\texttt{jvmti\_env} The JVMTI environment to inject JVMTIPROF into. Must not be \texttt{NULL}.
+
+\texttt{jvmtiprof\_env\_ptr} A pointer to the location the injected JVMTIPROF environment pointer will be placed. Must not be \texttt{NULL}.
+
+\texttt{version} The version of the JVMTIPROF interface to be created.
+
+\bigskip
+\noindent \textbf{RETURNS} 
+
+In case of failure, an error code is returned and \texttt{jvmtiprof\_env\_ptr} is assigned \texttt{NULL}. Otherwise, \texttt{jvmti\_env\_ptr} is assigned the injected JVMTIPROF environment and zero is returned.
+
+\bigskip
+\noindent \textbf{ERROR CODES} 
+
+This function returns either a universal error code or one of the following errors:
+\smallskip
+
+\hspace{\parindent} \texttt{JVMTIPROF\_ERROR\_UNSUPPORTED} Either the provided JVMTIPROF interface \texttt{version} is not supported, or the version of the provided \texttt{jvmti\_env} interface is not supported.
+
+\hspace{\parindent} \texttt{JVMTIPROF\_ERROR\_WRONG\_PHASE} The virtual machine is not in the OnLoad phase.
+% TODO explain along the methodology why only during OnLoad
+
+\subsubsection*{jvmtiProf\_GetEnv} *
+
+
+\subsection{Method Call Interception}
+
+\subsection{Application Execution Sampling}
+
+\subsection{Application State Sampling}
+
+\subsection{Event Management}
+
+\subsection{Capability}
+
+\subsection{General}
+
+
+% BEGIN OLD STUFF
+\iffalse
 In this chapter we present the architecture of the agent system (Section~\ref{sec:agentsystem}) and the programming interface used by scheduling agents (Section~\ref{sec:api}).
 
 \section{The Agent System} \label{sec:agentsystem}
@@ -65,6 +156,8 @@ This achieves our third goal of not introducing more contention. We want to meas
 
 
 \section{Programming Interface} \label{sec:api}
+% END OLDSTUFF
+\fi
 
 TODO
 
