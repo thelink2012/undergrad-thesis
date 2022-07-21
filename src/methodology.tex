@@ -6,7 +6,7 @@
 
 \section{Programming Interface} \label{sec:api}
 
-In order to use JVMTIPROF, the agent must create and inject an JVMTIPROF environment into an existing JVMTI one. This can be done through the \hyperref[api:jvmtiProf_Create]{\texttt{jvmtiProf\_Create}} function.
+In order to use JVMTIPROF, the agent must create and inject an JVMTIPROF environment into an existing JVMTI one. This can be done through the \hyperref[api:jvmtiProf_Create]{\code{jvmtiProf_Create}} function.
 
 Multiple JVMTIPROF environments can be injected into an JVMTI environment. Each environment retains its own state. For example, each has its own logging verbosity, configured capabilities, and registered events.
 
@@ -49,18 +49,18 @@ Required functionality.
 \bigskip
 \noindent \textbf{PARAMETERS}
 
-\texttt{vm} The virtual machine instance on which the \texttt{jvmti\_env} is installed in. Must not be \texttt{NULL}.
+\code{vm} The virtual machine instance on which the \code{jvmti_env} is installed in. Must not be \code{NULL}.
 
-\texttt{jvmti\_env} The JVMTI environment to inject JVMTIPROF into. Must not be \texttt{NULL}.
+\code{jvmti_env} The JVMTI environment to inject JVMTIPROF into. Must not be \code{NULL}.
 
-\texttt{jvmtiprof\_env\_ptr} A pointer to the location the injected JVMTIPROF environment pointer will be placed. Must not be \texttt{NULL}.
+\code{jvmtiprof_env_ptr} A pointer to the location the injected JVMTIPROF environment pointer will be placed. Must not be \code{NULL}.
 
-\texttt{version} The version of the JVMTIPROF interface to be created.
+\code{version} The version of the JVMTIPROF interface to be created.
 
 \bigskip
 \noindent \textbf{RETURNS} 
 
-In case of failure, an error code is returned and \texttt{jvmtiprof\_env\_ptr} is assigned \texttt{NULL}. Otherwise, \texttt{jvmti\_env\_ptr} is assigned the injected JVMTIPROF environment and zero is returned.
+In case of failure, an error code is returned and \code{jvmtiprof_env_ptr} is assigned \code{NULL}. Otherwise, \code{jvmti_env_ptr} is assigned the injected JVMTIPROF environment and zero is returned.
 
 \bigskip
 \noindent \textbf{ERROR CODES} 
@@ -68,9 +68,9 @@ In case of failure, an error code is returned and \texttt{jvmtiprof\_env\_ptr} i
 This function returns either a universal error code or one of the following errors:
 \smallskip
 
-\hspace{\parindent} \texttt{JVMTIPROF\_ERROR\_UNSUPPORTED} Either the provided JVMTIPROF interface \texttt{version} is not supported, or the version of the provided \texttt{jvmti\_env} interface is not supported.
+\hspace{\parindent} \code{JVMTIPROF_ERROR_UNSUPPORTED} Either the provided JVMTIPROF interface \code{version} is not supported, or the version of the provided \code{jvmti_env} interface is not supported.
 
-\hspace{\parindent} \texttt{JVMTIPROF\_ERROR\_WRONG\_PHASE} The virtual machine is not in the OnLoad phase.
+\hspace{\parindent} \code{JVMTIPROF_ERROR_WRONG_PHASE} The virtual machine is not in the OnLoad phase.
 % TODO explain along the methodology why only during OnLoad
 
 \subsubsection*{jvmtiProf\_GetEnv} *
