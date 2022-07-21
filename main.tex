@@ -25,7 +25,8 @@
 %%           twoside - para impressao em frente e verso (padrao)
 
 % AtenÃ§Ã£o: Manter 'classic' na declaracao abaixo:
-\documentclass[bsc, en, classic, a4paper]{ufbathesis}
+\documentclass[bsc, en, classic, scr, a4paper]{ufbathesis}
+% FIXME I added scr manually, should it be kept as print?
 
 %% Preambulo:
 \usepackage[utf8]{inputenc}
@@ -65,7 +66,7 @@ line/.style={-latex}
 \majorfield{Ci\^{e}ncia da Computa\c{c}\~{a}o}
 
 % Titulo da dissertacao
-\title{Pluggable Thread Scheduling Agents for the Java Virtual Machine}
+\title{JVMTIPROF: An extension to the Java™ Virtual Machine Tool Infrastructure for building profiling agents}
 
 % Data da defesa
 % e.g. \date{19 de fevereiro de 2013}
@@ -142,6 +143,9 @@ TODO
 
 \resumo
 \input{src/abstract-pt}
+
+% Some keywords:
+% Instrumentation
 
 % TODO
 \begin{keywords}
