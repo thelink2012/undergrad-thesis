@@ -41,6 +41,8 @@
 \usepackage[printonlyused, withpage]{acronym}
 
 % Custom preamble
+\usepackage[T1]{fontenc} % https://tex.stackexchange.com/q/150767
+\usepackage{enumitem} % for itemize spacing options
 \usepackage{tikz}
 \usetikzlibrary{positioning}
 \tikzset{block/.style={draw,thick,text width=2cm,minimum height=1cm,align=center},
@@ -50,6 +52,7 @@ line/.style={-latex}
   basicstyle = \ttfamily
 }
 \let\code\lstinline
+\input{src/macros}
 
 
 % Universidade

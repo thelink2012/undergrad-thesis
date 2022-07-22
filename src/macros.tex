@@ -1,0 +1,55 @@
+%%%%%%%%%%%% API Definition Macros %%%%%%%%%%%%
+\newenvironment{apidef}[1]{
+   %\subsubsection*{\detokenize{#1}} \label{api:#1} *
+   % TODO fix underline with an additional space after it
+   \noindent \textbf{\detokenize{#1}} \label{api:#1}
+   \bigskip
+
+   \newenvironment{apidesc}{
+      \bigbreak
+      \noindent \textbf{DESCRIPTION} \par
+   }{
+      \par \bigbreak
+   }
+
+   \newenvironment{apiphase}{
+      \noindent \textbf{PHASES} \par
+   }{
+      \par \bigbreak
+   }
+   \newcommand{\apiphaseonload}{This function may only be called during the OnLoad phase.}
+
+   \newenvironment{apicap}{
+      \noindent \textbf{CAPABILITIES} \par
+   }{
+      \par \bigbreak
+   }
+   \newcommand{\apicaprequired}{Required functionality.}
+
+   \newenvironment{apiparam}{
+      \noindent \textbf{PARAMETERS} \par
+      \begin{itemize}[itemsep=0pt]
+   }{
+      \end{itemize}
+      \par \bigbreak
+   }
+   \newcommand{\apiparamdef}[2]{\item[] \code{##1} ##2}
+
+   \newenvironment{apireturn}{
+      \noindent \textbf{RETURNS} \par
+   }{
+      \par \bigbreak
+   }
+
+   \newenvironment{apierror}{
+      \noindent \textbf{ERROR CODES} \par
+      This function returns either a universal error code or one of the following errors:
+      \begin{itemize}[itemsep=0pt]
+   }{
+      \end{itemize}
+      \par \bigbreak
+   }
+   \newcommand{\apierrordef}[2]{\item[] \code{##1} ##2}
+}{
+   \par \bigbreak
+}
