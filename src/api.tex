@@ -1,0 +1,852 @@
+
+\subsection{Extension Injection}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Create}
+\begin{lstlisting}[language=C]
+jvmtiProfError jvmtiProf_Create(
+            JavaVM* vm,
+            jvmtiEnv* jvmti_env,
+            jvmtiProfEnv** jvmtiprof_env_ptr,
+            jvmtiProfVersion version);
+\end{lstlisting}
+
+\begin{apidesc}
+Creates a JVMTIPROF environment and injects it into the given JVMTI environment.
+
+This function is on the global scope i.e. not in the JVMTIPROF environment interface pointer.
+\end{apidesc}
+
+\begin{apiphase}
+\apiphaseonload
+\end{apiphase}
+
+\begin{apicap}
+\apicaprequired
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{vm}{The virtual machine instance on which the \code{jvmti_env} is installed in. Must not be \code{NULL}.}
+\apiparamdef{jvmti_env}{The JVMTI environment to inject JVMTIPROF into. Must not be \code{NULL}.}
+\apiparamdef{jvmtiprof_env_ptr}{A pointer to the location the injected JVMTIPROF environment pointer will be placed. Must not be \code{NULL}.}
+\apiparamdef{version}{The version of the JVMTIPROF interface to be created.}
+\end{apiparam}
+
+\begin{apireturn}
+In case of failure, an error code is returned and \code{jvmtiprof_env_ptr} is assigned \code{NULL}. Otherwise, \code{jvmti_env_ptr} is assigned the injected JVMTIPROF environment and zero is returned.
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{JVMTIPROF_ERROR_WRONG_PHASE}{The virtual machine is not in the OnLoad phase.}
+\apierrordef{JVMTIPROF_ERROR_UNSUPPORTED}{Either the provided JVMTIPROF interface \code{version} is not supported, or the version of the provided \code{jvmti_env} interface is not supported.}
+% TODO explain along the methodology why this function can only be called during OnLoad
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Get Env}
+\begin{lstlisting}[language=C]
+jvmtiProfError jvmtiProf_GetEnv(
+            jvmtiEnv* jvmti_env,
+            jvmtiProfEnv** jvmtiprof_env_ptr);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+
+This function is on the global scope i.e. not in the JVMTIPROF environment interface pointer.
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Method Call Interception}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Set Method Event Flag}
+\begin{lstlisting}[language=C]
+jvmtiProfError SetMethodEventFlag(
+            jvmtiProfEnv* jvmtiprof_env,
+            jmethodID method_id,
+            jvmtiProfMethodEventFlag flags,
+            jboolean enable);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Application Execution Sampling}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Set Execution Sampling Interval}
+\begin{lstlisting}[language=C]
+jvmtiProfError SetExecutionSamplingInterval(
+            jvmtiProfEnv* jvmtiprof_env,
+            jlong nanos_interval);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Get Stack Trace Async}
+\begin{lstlisting}[language=C]
+jvmtiProfError GetStackTraceAsync(
+            jvmtiProfEnv* jvmtiprof_env,
+            jint depth,
+            jint max_frame_count,
+            jvmtiProfFrameInfo* frame_buffer,
+            jint* count_ptr);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Application State Sampling}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Get Processor Count}
+\begin{lstlisting}[language=C]
+jvmtiProfError GetProcessorCount(
+            jvmtiProfEnv* jvmtiprof_env_ptr,
+            jint* processor_count_ptr);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Set Application State Sampling Interval}
+\begin{lstlisting}[language=C]
+jvmtiProfError SetApplicationStateSamplingInterval(
+            jvmtiProfEnv* jvmtiprof_env,
+            jlong nanos_interval);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Get Sampled Critical Section Pressure}
+\begin{lstlisting}[language=C]
+jvmtiProfError GetSampledCriticalSectionPressure(
+            jvmtiProfEnv* jvmtiprof_env_ptr,
+            jvmtiProfApplicationState* sample_data,
+            jdouble* csp_ptr);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Get Sampled Thread Count}
+\begin{lstlisting}[language=C]
+jvmtiProfError GetSampledThreadCount(
+            jvmtiProfEnv* jvmtiprof_env_ptr,
+            jvmtiProfApplicationState* sample_data,
+            jint* thread_count_ptr);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Get Sampled Threads Data}
+\begin{lstlisting}[language=C]
+jvmtiProfError GetSampledThreadsData(
+            jvmtiProfEnv* jvmtiprof_env_ptr,
+            jvmtiProfApplicationState* sample_data,
+            jint max_thread_count,
+            jvmtiProfSampledThreadState* threads_data_ptr,
+            jint* count_ptr);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Get Sampled Hardware Counters}
+\begin{lstlisting}[language=C]
+jvmtiProfError GetSampledHardwareCounters(
+            jvmtiProfEnv* jvmtiprof_env,
+            jvmtiProfApplicationState* sample_data,
+            jint processor_id,
+            jint max_counters,
+            uint64_t* counter_buffer_ptr,
+            jint* count_ptr);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Get Sampled Software Counters}
+\begin{lstlisting}[language=C]
+jvmtiProfError GetSampledSoftwareCounters(
+            jvmtiProfEnv* jvmtiprof_env,
+            jvmtiProfApplicationState* sample_data,
+            jint max_counters,
+            uint64_t* counter_buffer_ptr,
+            jint* count_ptr);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Event Management}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Set Event Notification Mode}
+\begin{lstlisting}[language=C]
+jvmtiProfError SetEventNotificationMode(
+            jvmtiProfEnv* jvmtiprof_env,
+            jvmtiEventMode mode,
+            jvmtiProfEvent event_type,
+            jthread event_thread,
+            ...);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Set Event Callbacks}
+\begin{lstlisting}[language=C]
+jvmtiProfError SetEventCallbacks(
+            jvmtiProfEnv* jvmtiprof_env,
+            const jvmtiProfEventCallbacks* callbacks,
+            jint size_of_callbacks);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Generate Events}
+\begin{lstlisting}[language=C]
+jvmtiProfError GenerateEvents(
+            jvmtiProfEnv* jvmtiprof_env,
+            jvmtiProfEvent event_type);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Capability}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Get Potential Capabilities}
+\begin{lstlisting}[language=C]
+jvmtiProfError GetPotentialCapabilities(
+            jvmtiProfEnv* jvmtiprof_env,
+            jvmtiProfCapabilities* capabilities_ptr);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Add Capabilities}
+\begin{lstlisting}[language=C]
+jvmtiProfError AddCapabilities(
+            jvmtiProfEnv* jvmtiprof_env,
+            jvmtiProfCapabilities* capabilities_ptr);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Relinquish Capabilities}
+\begin{lstlisting}[language=C]
+jvmtiProfError RelinquishCapabilities(
+            jvmtiProfEnv* jvmtiprof_env,
+            const jvmtiProfCapabilities* capabilities_ptr);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Get Capabilities}
+\begin{lstlisting}[language=C]
+jvmtiProfError GetCapabilities(
+            jvmtiProfEnv* jvmtiprof_env,
+            jvmtiProfCapabilities* capabilities_ptr);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{General}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Dispose Environment}
+\begin{lstlisting}[language=C]
+jvmtiProfError DisposeEnvironment(jvmtiProfEnv* jvmtiprof_env);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Get Jvmti Env}
+\begin{lstlisting}[language=C]
+jvmtiProfError GetJvmtiEnv(
+            jvmtiProfEnv* jvmtiprof_env,
+            jvmtiEnv** jvmti_env_ptr);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Get Version Number}
+\begin{lstlisting}[language=C]
+jvmtiProfError GetVersionNumber(
+            jvmtiProfEnv* jvmtiprof_env,
+            jint* version_ptr);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Get Error Name}
+\begin{lstlisting}[language=C]
+jvmtiProfError GetErrorName(
+            jvmtiProfEnv* jvmtiprof_env,
+            jvmtiProfError error,
+            char** name_ptr);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{apidef}{Set Verbose Flag}
+\begin{lstlisting}[language=C]
+jvmtiProfError SetVerboseFlag(
+            jvmtiProfEnv* jvmtiprof_env,
+            jvmtiProfVerboseFlag flag,
+            jboolean value);
+\end{lstlisting}
+
+\begin{apidesc}
+TODO
+\end{apidesc}
+
+\begin{apiphase}
+TODO
+\end{apiphase}
+
+\begin{apicap}
+TODO
+\end{apicap}
+
+\begin{apiparam}
+\apiparamdef{todo}{TODO}
+\end{apiparam}
+
+\begin{apireturn}
+TODO
+\end{apireturn}
+
+\begin{apierror}
+\apierrordef{TODO}{TODO}
+\end{apierror}
+\end{apidef}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Events}
+
+TODO
+

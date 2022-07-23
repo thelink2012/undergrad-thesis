@@ -16,92 +16,7 @@ Multiple JVMTIPROF environments can be injected into an JVMTI environment. Each 
 
 %etc explain error codes, return values, references, prerequisite states (see jvmti docs)
 
-
-\subsection{Extension Injection}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{apidef}{jvmtiProf_Create}
-\begin{lstlisting}[language=C]
-jvmtiProfError jvmtiProf_Create(JavaVM* vm,
-                                jvmtiEnv* jvmti_env,
-                                jvmtiProfEnv** jvmtiprof_env_ptr,
-                                jvmtiProfVersion version);
-\end{lstlisting}
-
-\begin{apidesc}
-Creates a JVMTIPROF environment and injects it into the given JVMTI environment.
-\end{apidesc}
-
-\begin{apiphase}
-\apiphaseonload
-\end{apiphase}
-
-\begin{apicap}
-\apicaprequired
-\end{apicap}
-
-\begin{apiparam}
-\apiparamdef{vm}{The virtual machine instance on which the \code{jvmti_env} is installed in. Must not be \code{NULL}.}
-\apiparamdef{jvmti_env}{The JVMTI environment to inject JVMTIPROF into. Must not be \code{NULL}.}
-\apiparamdef{jvmtiprof_env_ptr}{A pointer to the location the injected JVMTIPROF environment pointer will be placed. Must not be \code{NULL}.}
-\apiparamdef{version}{The version of the JVMTIPROF interface to be created.}
-\end{apiparam}
-
-\begin{apireturn}
-In case of failure, an error code is returned and \code{jvmtiprof_env_ptr} is assigned \code{NULL}. Otherwise, \code{jvmti_env_ptr} is assigned the injected JVMTIPROF environment and zero is returned.
-\end{apireturn}
-
-\begin{apierror}
-\apierrordef{JVMTIPROF_ERROR_WRONG_PHASE}{The virtual machine is not in the OnLoad phase.}
-\apierrordef{JVMTIPROF_ERROR_UNSUPPORTED}{Either the provided JVMTIPROF interface \code{version} is not supported, or the version of the provided \code{jvmti_env} interface is not supported.}
-% TODO explain along the methodology why this function can only be called during OnLoad
-\end{apierror}
-\end{apidef}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{apidef}{jvmtiProf_GetEnv}
-\begin{lstlisting}[language=C]
-TODO
-\end{lstlisting}
-
-\begin{apidesc}
-TODO
-\end{apidesc}
-
-\begin{apiphase}
-TODO
-\end{apiphase}
-
-\begin{apicap}
-TODO
-\end{apicap}
-
-\begin{apiparam}
-\apiparamdef{todo}{TODO}
-\end{apiparam}
-
-\begin{apireturn}
-TODO
-\end{apireturn}
-
-\begin{apierror}
-\apierrordef{TODO}{TODO}
-\end{apierror}
-\end{apidef}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Method Call Interception}
-
-\subsection{Application Execution Sampling}
-
-\subsection{Application State Sampling}
-
-\subsection{Event Management}
-
-\subsection{Capability}
-
-\subsection{General}
-
+\input{src/api}
 
 % BEGIN OLD STUFF
 \iffalse
@@ -169,9 +84,7 @@ This achieves our third goal of not introducing more contention. We want to meas
 \subsection{The Scheduling Agent}
 
 
-\section{Programming Interface} \label{sec:api}
 % END OLDSTUFF
 \fi
 
-TODO
 
