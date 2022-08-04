@@ -5,7 +5,6 @@ public class Target {
         System.out.println("Starting...");
         while(true) {
             ++value;
-            Thread.sleep(1);
         }
     }
 }
