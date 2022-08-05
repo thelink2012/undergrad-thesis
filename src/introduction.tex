@@ -1,8 +1,8 @@
 \xchapter{Introduction}{}
 
-Profiling of applications is a commonly used technique in the software industry in order to identify bottlenecks of an application. These bottlenecks may be of different natures, such as of performance or of power-consumption.
+Profiling of applications is a commonly used technique in the software industry in order to identify application's bottlenecks. These bottlenecks may be of different natures, such as of performance, storage or of power-consumption.
 
-Profiling is sometimes accompained by instrumentation. During instrumentation, the application's code is transformed in order to support the profiler. For example, every function may be modified to produce events at their entry and exit point. This way, the profiler can acurrately measure how much time is spent at each function.
+Profiling is sometimes accompained by instrumentation. During instrumentation, the application's code is transformed in order to support the profiler. For example, every function may be modified to produce events at their entry and exit point. This way, the profiler can acurrately measure how much time is spent at each of them.
 
 Profiling suffers from a compromise between accuracy and performance. Too much interference to the application may cause its performance characteristics to change, making the profiling results useless. On the other hand, too little interference mayn't produce enough data for accurate results.
 
@@ -10,14 +10,13 @@ Profiling suffers from a compromise between accuracy and performance. Too much i
 
 \section{Motivation}
 
-In this work, we present an instrumentation and profiling framework for the Java Virtual Machine. Unlike typicall profilers, that are self-contained programs, reporting metrics and events about another application, this one works as a library. The programmer may execute arbitrary code based on the metrics and events reported to them.
+Profilers are typically self-contained programs, reporting metrics and events about another application through an user-interface. Some, however, work as a library, providing the functionality necessary for profiling and instrumenting applications. In such case, programmers may execute arbitrary code based on the metrics and events reported to them.
 
-This is useful for a number of reasons. One of them is to build the self-contained profilers themselves. After all, they need to have code reacting to the profiled application in order to report them to the end programmer. Another reason is to modify the behavior of an application without modifying its source code. This change in behaviour may be related to the profiling metrics or unrelated to them. The former can be exemplified by a computer process scheduler. The latter, by improving small pieces of an existing application without rebuilding them, which may be impractical in cases where the source code is private, lost, or time demanding to build.
-
-The JVM is choosen as the target platform for this work due to its widespread use in server-class applications. An target platform is important in order to focus the efforts of mitigating the performance overhead involved in profiling and instrumentation.
+This is useful for a number of reasons. One of them is to build the self-contained profilers themselves. After all, they need to have code reacting to the profiled application in order to report them to the end user-interface. Another reason is to modify the behavior of an application without modifying its source code. This change in behaviour may be related to the profiling metrics or unrelated to them. The former can be exemplified by a process scheduler. The latter, by improving small pieces of an existing application without rebuilding them, which may be impractical in cases where the source code is private, lost, or time demanding to build.
 
 The JVM does provide an API for the purpose of developing program analysis tools. This library is called JVMTI. However, such library provides only bare-bones functionality, leaving it to the programmer to build higher-level functionalities on top of it. For example, in order to instrument a method call, one needs to intercept the loading of bytecode, parse its data structures, modify them, and rebuild it as bytecode.
 
+%The JVM is chosen as the target platform for this work due to its widespread use in server-class applications. An target platform is important in order to focus the efforts of mitigating the performance overhead involved in profiling and instrumentation.
 % TODO citations
 % CITE: Kafka, Casandra, and others.
 % ALSO CITE: According to data from Alibaba’s datacenter, more than 90% of latency-critical cloud services are written and deployed as Java applications [17 - Who Limits the Resource Efficiency of My Datacenter: An Analysis of Alibaba Datacenter Traces]
@@ -25,6 +24,8 @@ The JVM does provide an API for the purpose of developing program analysis tools
 \section{Related Work}
 
 TODO
+
+% TODO maybe the "JVM does provide an API..." paragraph in the last section goes in the Related Work section.
 
 %% Scheduling
 % Compiler-assisted Adaptive Program Scheduling in big.LITTLE Systems
@@ -59,5 +60,5 @@ TODO
 
 \section{Contribution}
 
-In this work, we present JVMTIPROF, an library extending the JVMTI. We use the same patters, idioms, and types, extending its interface to provide more (and easier) functionalities for profiling and instrumentation agents. This way, developers of these agents can focus more on their methods and less on the supporting infrastructure.
+In this work, we present JVMTIPROF, a library extending the JVMTI. We use the same patters, idioms, and types, extending its interface to provide more (and easier) functionalities for profiling and instrumentation agents. This way, developers of these agents can focus their effort on methods instead of in the supporting infrastructure.
 
