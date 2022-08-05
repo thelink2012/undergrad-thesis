@@ -1,8 +1,15 @@
 %%%%%%%%%%%% API Definition Macros %%%%%%%%%%%%
+
+\newcommand{\apiref}[1]{\hyperref[api:#1]{\code{#1}}}
+\newcommand{\apieventref}[1]{\code{#1}} % TODO
+\newcommand{\apicapref}[1]{\code{#1}} % TODO
+\newcommand{\apijvmtiref}[1]{\href{https://docs.oracle.com/en/java/javase/11/docs/specs/jvmti.html\##1}{\code{#1}}}
+
 \newenvironment{apidef}[1]{
    %\subsubsection*{\detokenize{#1}} \label{api:#1} *
    % TODO fix underline with an additional space after it
    \noindent \textbf{\detokenize{#1}} \label{api:#1}
+   % TODO must remove spaces in label about
    \bigskip
 
    \newenvironment{apidesc}{
@@ -17,7 +24,9 @@
    }{
       \par \bigbreak
    }
+   \newcommand{\apiphaseany}{This function may be called during any phase.}
    \newcommand{\apiphaseonload}{This function may only be called during the OnLoad phase.}
+   \newcommand{\apiphaseonloadlive}{This function may only be called during the OnLoad or the live phase.}
 
    \newenvironment{apicap}{
       \noindent \textbf{CAPABILITIES} \par
@@ -33,6 +42,7 @@
       \end{itemize}
       \par \bigbreak
    }
+   \newcommand{\apiparamempty}{}
    \newcommand{\apiparamdef}[2]{\item[] \code{##1} ##2}
 
    \newenvironment{apireturn}{
@@ -40,6 +50,7 @@
    }{
       \par \bigbreak
    }
+   \newcommand{\apireturnempty}{}
 
    \newenvironment{apierror}{
       \noindent \textbf{ERROR CODES} \par
@@ -49,7 +60,12 @@
       \end{itemize}
       \par \bigbreak
    }
-   \newcommand{\apierrordef}[2]{\item[] \code{##1} ##2}
+   \newcommand{\apierrorempty}{
+      \noindent \textbf{ERROR CODES} \par
+      This function returns a universal error code.
+      \par \bigbreak
+   }
+   \newcommand{\apierrordef}[2]{\item[] \code{##1}: ##2}
 }{
    \par \bigbreak
 }

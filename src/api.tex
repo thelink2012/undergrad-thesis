@@ -15,6 +15,8 @@ jvmtiProfError jvmtiProf_Create(
 Creates a JVMTIPROF environment and injects it into the given JVMTI environment.
 
 This function is on the global scope i.e. not in the JVMTIPROF environment interface pointer.
+
+% TODO explain about the hooks (and injection) during the introduction of the API and/or in the methodology
 \end{apidesc}
 
 \begin{apiphase}
@@ -26,20 +28,19 @@ This function is on the global scope i.e. not in the JVMTIPROF environment inter
 \end{apicap}
 
 \begin{apiparam}
-\apiparamdef{vm}{The virtual machine instance on which the \code{jvmti_env} is installed in. Must not be \code{NULL}.}
-\apiparamdef{jvmti_env}{The JVMTI environment to inject JVMTIPROF into. Must not be \code{NULL}.}
-\apiparamdef{jvmtiprof_env_ptr}{A pointer to the location the injected JVMTIPROF environment pointer will be placed. Must not be \code{NULL}.}
+\apiparamdef{vm}{The virtual machine instance on which the \code{jvmti_env} is installed in.}
+\apiparamdef{jvmti_env}{The JVMTI environment to inject JVMTIPROF into.}
+\apiparamdef{jvmtiprof_env_ptr}{Pointer through which the injected JVMTIPROF environment pointer is returned.}
 \apiparamdef{version}{The version of the JVMTIPROF interface to be created.}
 \end{apiparam}
 
-\begin{apireturn}
-In case of failure, an error code is returned and \code{jvmtiprof_env_ptr} is assigned \code{NULL}. Otherwise, \code{jvmti_env_ptr} is assigned the injected JVMTIPROF environment and zero is returned.
-\end{apireturn}
+\apireturnempty
 
 \begin{apierror}
+% TODO explain along the methodology why this function can only be called during OnLoad
 \apierrordef{JVMTIPROF_ERROR_WRONG_PHASE}{The virtual machine is not in the OnLoad phase.}
 \apierrordef{JVMTIPROF_ERROR_UNSUPPORTED}{Either the provided JVMTIPROF interface \code{version} is not supported, or the version of the provided \code{jvmti_env} interface is not supported.}
-% TODO explain along the methodology why this function can only be called during OnLoad
+\apierrordef{JVMTIPROF_ERROR_NULL_POINTER}{Either \code{vm}, \code{jvmti_env}, or \code{jvmtiprof_env_ptr} is \code{NULL}.}
 \end{apierror}
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -52,29 +53,29 @@ jvmtiProfError jvmtiProf_GetEnv(
 \end{lstlisting}
 
 \begin{apidesc}
-TODO
+Returns the JVMTIPROF environment injected into the given JVMTI environment. \apiref{Create} must have been previously called on the given \code{jvmti_env}.
 
 This function is on the global scope i.e. not in the JVMTIPROF environment interface pointer.
 \end{apidesc}
 
 \begin{apiphase}
-TODO
+\apiphaseany
 \end{apiphase}
 
 \begin{apicap}
-TODO
+\apicaprequired
 \end{apicap}
 
 \begin{apiparam}
-\apiparamdef{todo}{TODO}
+\apiparamdef{jvmti_env}{The JMVTI environment to extract JVMTIPROF from.}
+\apiparamdef{jvmtiprof_env_ptr}{Pointer through which the injected JMVTIPROF environment pointer is returned.}
 \end{apiparam}
 
-\begin{apireturn}
-TODO
-\end{apireturn}
+\apireturnempty
 
 \begin{apierror}
-\apierrordef{TODO}{TODO}
+\apierrordef{JVMTIPROF_ERROR_NULL_POINTER}{Either \code{jvmti_env} or \code{jvmtiprof_env_ptr} is \code{NULL}.}
+\apierrordef{JVMTIPROF_ERROR_INVALID_ENVIRONMENT}{\code{jvmti_env} doesn't have an associated JVMTIPROF environment.}
 \end{apierror}
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -84,6 +85,12 @@ TODO
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{apidef}{Set Method Event Flag}
 \begin{lstlisting}[language=C]
+typedef enum
+{
+    JVMTIPROF_METHOD_EVENT_ENTRY = 1,
+    JVMTIPROF_METHOD_EVENT_EXIT = 2,
+} jvmtiProfMethodEventFlag;
+
 jvmtiProfError SetMethodEventFlag(
             jvmtiProfEnv* jvmtiprof_env,
             jmethodID method_id,
@@ -92,7 +99,17 @@ jvmtiProfError SetMethodEventFlag(
 \end{lstlisting}
 
 \begin{apidesc}
-TODO
+Sets whether the given method should generate entry/exit events.
+
+The \code{jvmtiProfMethodEventFlag} enumeration is a bitmask and can be combined in a single call of this function by \code{JVMTIPROF_METHOD_EVENT_ENTRY | JVMTIPROF_METHOD_EVENT_EXIT}.
+
+When \code{JVMTIPROF_METHOD_EVENT_ENTRY} is \code{enable}d, \apieventref{SpecificMethodEntry} events are generated for the given method.
+
+When \code{JVMTIPROF_METHOD_EVENT_EXIT} is \code{enable}d, \apieventref{SpecificMethodExit} events are generated for the given method.
+
+This function alone doesn't enable the events. It must be enabled by \apiref{SetEventNotificationMode} and callbacks set in \apiref{SetEventCallbacks}. See section~\ref{sec:eventmgr}.
+
+% TODO how exactly does this API work? Which phases? Which restrictions on class loading order?
 \end{apidesc}
 
 \begin{apiphase}
@@ -104,15 +121,18 @@ TODO
 \end{apicap}
 
 \begin{apiparam}
-\apiparamdef{todo}{TODO}
+\apiparamdef{method_id}{The method.}
+\apiparamdef{flags}{The flags to apply the \code{enable} boolean to.}
+\apiparamdef{enable}{Whether to enable (or disable) the events.}
 \end{apiparam}
 
-\begin{apireturn}
-TODO
-\end{apireturn}
+\apireturnempty
 
 \begin{apierror}
-\apierrordef{TODO}{TODO}
+\apierrordef{JVMTIPROF_ERROR_INVALID_METHODID}{\code{method} is not a \code{jmethodID}.}
+\apierrordef{JVMTIPROF_ERROR_ILLEGAL_ARGUMENT}{\code{flags} aren't valid flags. }
+\apierrordef{JVMTIPROF_ERROR_MUST_POSSESS_CAPABILITY}{The environment does not possess the capability \apicapref{can_generate_specific_method_entry_events} and/or \\ \apicapref{can_generate_specific_method_exit_events}. Use \apiref{AddCapabilities}.}
+% TODO more when this is actually implemented
 \end{apierror}
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -435,7 +455,7 @@ TODO
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Event Management}
+\subsection{Event Management} \label{sec:eventmgr}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{apidef}{Set Event Notification Mode}
@@ -449,27 +469,66 @@ jvmtiProfError SetEventNotificationMode(
 \end{lstlisting}
 
 \begin{apidesc}
-TODO
+Controls the generation of events.
+
+If \code{JVMTI_ENABLE} is given in \code{mode}, the generation of events of type \code{event_type} are enabled. If \code{JVMTI_DISABLE} is given, generation of events of \code{event_type} are disabled.
+
+If \code{event_thread} is \code{NULL}, the event is enabled or disabled globally; otherwise it is enabled or disabled for a particular thread. A event is generated for a particular thread if it is enabled either globally or at the thread level.
+
+See section~\ref{sec:eventmgr} for details on events.
+
+The following events cannot be controlled at the thread level through this function:
+\begin{itemize}
+% TODO review this list and sync with implementation
+\item \apieventref{SampleApplicationState}
+\item \apieventref{SampleCriticalSectionPressure}
+\item \apieventref{SampleHardwareCounter}
+\item \apieventref{SampleSoftwareCounter}
+\end{itemize}
+
+Initially no events are enabled at the thread level or global level.
+
+Any needed capabilities must be possessed before calling this function.
 \end{apidesc}
 
 \begin{apiphase}
-TODO
+\apiphaseonloadlive
 \end{apiphase}
 
 \begin{apicap}
-TODO
+\apicaprequired
+
+Certain capabilities are necessary for some \code{event_type}s:
+\begin{itemize}
+\item \apicapref{can_generate_sample_execution_events} is necessary for \apieventref{SampleExecution} events.
+\item \apicapref{can_generate_sample_application_state_events} is necessary for \apieventref{SampleApplicationState} events.
+\item \apicapref{can_generate_specific_method_entry_events} is necessary for \apieventref{SpecificMethodEntry} events.
+\item \apicapref{can_generate_specific_method_exit_events} is necessary for \apieventref{SpecificMethodExit} events.
+\item \apicapref{can_sample_critical_section_pressure} is necessary for \apieventref{SampleCriticalSectionPressure} events.
+\item \apicapref{can_sample_thread_state} is necessary for \apieventref{SampleThreadState} events.
+\item \apicapref{can_sample_thread_processor} is necessary for \apieventref{SampleThreadProcessor} events.
+\item \apicapref{can_sample_hardware_counters} is necessary for \apieventref{SampleHardwareCounter} events.
+\item \apicapref{can_sample_software_counters} is necessary for \apieventref{SampleSoftwareCounter} events.
+\end{itemize}
 \end{apicap}
 
 \begin{apiparam}
-\apiparamdef{todo}{TODO}
+\apiparamdef{mode}{Whether to \code{JVMTI_ENABLE} or \code{JVMTI_DISABLE} the event.}
+\apiparamdef{event_type}{The event to control.}
+\apiparamdef{event_thread}{The thread to control. If \code{NULL}, the event is controlled globally.}
+\apiparamdef{...}{For future expansion.}
 \end{apiparam}
 
-\begin{apireturn}
-TODO
-\end{apireturn}
+\apireturnempty
 
 \begin{apierror}
-\apierrordef{TODO}{TODO}
+\apierrordef{JVMTIPROF_ERROR_INVALID_THREAD}{\code{event_thread} is non-\code{NULL} and is not a valid thread}
+\apierrordef{JVMTIPROF_ERROR_THREAD_NOT_ALIVE}{\code{event_thread} is non-\code{NULL} and is not live (has not been started or is now dead)}
+\apierrordef{JVMTIPROF_ERROR_ILLEGAL_ARGUMENT}{Thread level control was attempted on events that do not allow thread control.}
+\apierrordef{JVMTIPROF_ERROR_ILLEGAL_ARGUMENT}{Thread level control was attempted on events that do not allow thread control.}
+\apierrordef{JVMTIPROF_ERROR_ILLEGAL_ARGUMENT}{\code{mode} is not a valid \code{jvmtiEventMode}.}
+\apierrordef{JVMTIPROF_ERROR_ILLEGAL_ARGUMENT}{\code{event_type} is not a valid \code{jvmtiProfEvent}.}
+\apierrordef{JVMTIPROF_ERROR_MUST_POSSESS_CAPABILITY}{The capability necessary to enable the events is not possessed.}
 \end{apierror}
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -483,27 +542,32 @@ jvmtiProfError SetEventCallbacks(
 \end{lstlisting}
 
 \begin{apidesc}
-TODO
+Sets the functions called for each event. The callbacks are specified by supplying a replacement function table. The function table is copied, changes to the local copy of the table will have no effect. This an atomic action, all callbacks are set at once.  No events are sent before this function is called. When an entry is \code{NULL} or when the event is beyond \code{size_of_callbacks} no event is sent.
+
+An event must be enabled and have a callback in order to be sent. The order in which this function and \apiref{SetEventNotificationMode} are called does not affect the result. 
+
+See section~\ref{sec:eventmgr} for details on events.
+
+% TODO the function table replacement is atomic as per the description, but not in the impl.
 \end{apidesc}
 
 \begin{apiphase}
-TODO
+\apiphaseonloadlive
 \end{apiphase}
 
 \begin{apicap}
-TODO
+\apicaprequired
 \end{apicap}
 
 \begin{apiparam}
-\apiparamdef{todo}{TODO}
+\apiparamdef{callbacks}{The new event callbacks. If \code{NULL}, removes the existing callbacks.}
+\apiparamdef{size_of_callbacks}{Must be equal \code{sizeof(jvmtiProfEventCallbacks)}. Used for version compatibility.}
 \end{apiparam}
 
-\begin{apireturn}
-TODO
-\end{apireturn}
+\apireturnempty
 
 \begin{apierror}
-\apierrordef{TODO}{TODO}
+\apierrordef{JVMTI_ERROR_ILLEGAL_ARGUMENT}{\code{size_of_callbacks} is less than \code{0} or not supported.}
 \end{apierror}
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -552,27 +616,30 @@ jvmtiProfError GetPotentialCapabilities(
 \end{lstlisting}
 
 \begin{apidesc}
-TODO
+Returns the JVMTIPROF features that can potentially be possessed by this environment at this time. 
+
+The returned capabilities differ from the complete set of capabilities implemented by JVMTIPROF in two cases: another environment possesses capabilities that can only be possessed by one environment, or the current phase is live, and certain capabilities can only be added during the OnLoad phase. The \apiref{AddCapabilities} function may be used to set any or all of these capabilities. Currently possessed capabilities are included.
+
+Typically this function is used in the OnLoad function. Typically, a limited set of capabilities can be added in the live phase. In this case, the set of potentially available capabilities will likely differ from the OnLoad phase set. 
+
 \end{apidesc}
 
 \begin{apiphase}
-TODO
+\apiphaseonloadlive
 \end{apiphase}
 
 \begin{apicap}
-TODO
+\apicaprequired
 \end{apicap}
 
 \begin{apiparam}
-\apiparamdef{todo}{TODO}
+\apiparamdef{capabilities_ptr}{Pointer through which the set of capabilities is returned.}
 \end{apiparam}
 
-\begin{apireturn}
-TODO
-\end{apireturn}
+\apireturnempty
 
 \begin{apierror}
-\apierrordef{TODO}{TODO}
+\apierrordef{JVMTIPROF_ERROR_NULL_POINTER}{\code{capabilities_ptr} is \code{NULL}}
 \end{apierror}
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -587,27 +654,26 @@ jvmtiProfError AddCapabilities(
 \end{lstlisting}
 
 \begin{apidesc}
-TODO
+Set new capabilities by adding the capabilities whose values are set to \code{1} in \code{*capabilities_ptr}. All previous capabilities are retained. Typically this function is used in the OnLoad function. A limited set of capabilities can be added in the live phase. 
 \end{apidesc}
 
 \begin{apiphase}
-TODO
+\apiphaseonloadlive
 \end{apiphase}
 
 \begin{apicap}
-TODO
+\apicaprequired
 \end{apicap}
 
 \begin{apiparam}
-\apiparamdef{todo}{TODO}
+\apiparamdef{capabilities_ptr}{Pointer to the capabilities to be added.}
 \end{apiparam}
 
-\begin{apireturn}
-TODO
-\end{apireturn}
+\apireturnempty
 
 \begin{apierror}
-\apierrordef{TODO}{TODO}
+\apierrordef{JVMTIPROF_ERROR_NOT_AVAILABLE}{The desired capabilities are not even potentially available.}
+\apierrordef{JVMTIPROF_ERROR_NULL_POINTER}{\code{capabilities_ptr} is \code{NULL}}
 \end{apierror}
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -620,27 +686,25 @@ jvmtiProfError RelinquishCapabilities(
 \end{lstlisting}
 
 \begin{apidesc}
-TODO
+Relinquish the capabilities whose values are set to \code{1} in \code{*capabilities_ptr}. Some implementations may allow only one environment to have a capability. This function releases capabilities so that they may be used by other environments. All other capabilities are retained. The capability will no longer be present in \apiref{GetCapabilities}. Attempting to relinquish a capability that the environment does not possess is not an error. 
 \end{apidesc}
 
 \begin{apiphase}
-TODO
+\apiphaseonloadlive
 \end{apiphase}
 
 \begin{apicap}
-TODO
+\apicaprequired
 \end{apicap}
 
 \begin{apiparam}
-\apiparamdef{todo}{TODO}
+\apiparamdef{capabilities_ptr}{Pointer to the capabilities to relinquish.}
 \end{apiparam}
 
-\begin{apireturn}
-TODO
-\end{apireturn}
+\apireturnempty
 
 \begin{apierror}
-\apierrordef{TODO}{TODO}
+\apierrordef{JVMTIPROF_ERROR_NULL_POINTER}{\code{capabilities_ptr} is \code{NULL}}
 \end{apierror}
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -653,27 +717,25 @@ jvmtiProfError GetCapabilities(
 \end{lstlisting}
 
 \begin{apidesc}
-TODO
+Returns the optional JVMTIPROF features which this environment currently possesses. Each possessed capability is indicated by a \code{1} in the corresponding field of the capabilities structure. An environment does not possess a capability unless it has been successfully added with \apiref{AddCapabilities}. An environment only loses possession of a capability if it has been relinquished with \apiref{RelinquishCapabilities}. Thus, this function returns the net result of the \apiref{AddCapabilities} and \apiref{RelinquishCapabilities} calls which have been made. 
 \end{apidesc}
 
 \begin{apiphase}
-TODO
+\apiphaseany
 \end{apiphase}
 
 \begin{apicap}
-TODO
+\apicaprequired
 \end{apicap}
 
 \begin{apiparam}
-\apiparamdef{todo}{TODO}
+\apiparamdef{capabilities_ptr}{Pointer through which the currently possessed capabilities are returned.}
 \end{apiparam}
 
-\begin{apireturn}
-TODO
-\end{apireturn}
+\apireturnempty
 
 \begin{apierror}
-\apierrordef{TODO}{TODO}
+\apierrordef{JVMTIPROF_ERROR_NULL_POINTER}{\code{capabilities_ptr} is \code{NULL}}
 \end{apierror}
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -687,28 +749,30 @@ jvmtiProfError DisposeEnvironment(jvmtiProfEnv* jvmtiprof_env);
 \end{lstlisting}
 
 \begin{apidesc}
-TODO
+Shutdowns a JVMTIPROF connection created with \apiref{Create}. Disposes of any resources held by the environment. JVMTIPROF hooks on the associated JVMTI environment will be undone.
+
+Any capabilities held by this environment are relinquished.
+
+Events enabled by this environment will no longer be run. % TODO?  however event handles currently running will continue to run. Caution must be exercised in the design of event handlers whose environment may be disposed and thus become invalid during their execution.
+
+This environment may not be used after this call.
+
+% TODO explain what happens with other interacted resources: Samples, Entry/Exit hooks
 \end{apidesc}
 
 \begin{apiphase}
-TODO
+\apiphaseany % TODO is that so?
 \end{apiphase}
 
 \begin{apicap}
-TODO
+\apicaprequired
 \end{apicap}
 
-\begin{apiparam}
-\apiparamdef{todo}{TODO}
-\end{apiparam}
+\apiparamempty
 
-\begin{apireturn}
-TODO
-\end{apireturn}
+\apireturnempty
 
-\begin{apierror}
-\apierrordef{TODO}{TODO}
-\end{apierror}
+\apierrorempty
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -720,27 +784,25 @@ jvmtiProfError GetJvmtiEnv(
 \end{lstlisting}
 
 \begin{apidesc}
-TODO
+Obtains the JVMTI environment associated with this JVMTIPROF environment.
 \end{apidesc}
 
 \begin{apiphase}
-TODO
+\apiphaseany
 \end{apiphase}
 
 \begin{apicap}
-TODO
+\apicaprequired
 \end{apicap}
 
 \begin{apiparam}
-\apiparamdef{todo}{TODO}
+\apiparamdef{jvmti_env_ptr}{Pointer through which the associated JVMTI environment is returned.}
 \end{apiparam}
 
-\begin{apireturn}
-TODO
-\end{apireturn}
+\apireturnempty
 
 \begin{apierror}
-\apierrordef{TODO}{TODO}
+\apierrordef{JVMTIPROF_ERROR_NULL_POINTER}{\code{jvmti_env_ptr} is \code{NULL}.}
 \end{apierror}
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -753,27 +815,29 @@ jvmtiProfError GetVersionNumber(
 \end{lstlisting}
 
 \begin{apidesc}
-TODO
+Return the JVMTIPROF version.
+
+The version identifier follows the same convention as that of JVMTI, with a major, minor and micro version. These can be accessed through the \code{JVMTI_VERSION_MASK_MAJOR}, \code{JVMTI_VERSION_MASK_MINOR} and \code{JVMTI_VERSION_MASK_MICRO} bitmasks applied to the returned value. The version identifier doesn't include an interface type, as such \\ \code{JVMTI_VERSION_MASK_INTERFACE_TYPE} is not used.
+
+See JVMTI's \apijvmtiref{GetVersionNumber} for details on the bitmasks.
 \end{apidesc}
 
 \begin{apiphase}
-TODO
+\apiphaseany
 \end{apiphase}
 
 \begin{apicap}
-TODO
+\apicaprequired
 \end{apicap}
 
 \begin{apiparam}
-\apiparamdef{todo}{TODO}
+\apiparamdef{version_ptr}{Pointer through which the JVMTIPROF version is returned.}
 \end{apiparam}
 
-\begin{apireturn}
-TODO
-\end{apireturn}
+\apireturnempty
 
 \begin{apierror}
-\apierrordef{TODO}{TODO}
+\apierrordef{JVMTIPROF_ERROR_NULL_POINTER}{\code{version_ptr} is \code{NULL}.}
 \end{apierror}
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -787,32 +851,35 @@ jvmtiProfError GetErrorName(
 \end{lstlisting}
 
 \begin{apidesc}
-TODO
+Return the symbolic name for an \hyperref[api:ec]{error code}.
+
+For example \code{GetErrorName(env, JVMTIPROF_ERROR_NONE, &err_name)} would return in \code{err_name} the string \code{"JVMTIPROF_ERROR_NONE"}.
 \end{apidesc}
 
 \begin{apiphase}
-TODO
+\apiphaseany
 \end{apiphase}
 
 \begin{apicap}
-TODO
+\apicaprequired
 \end{apicap}
 
 \begin{apiparam}
-\apiparamdef{todo}{TODO}
+\apiparamdef{error}{The error code.}
+\apiparamdef{name_ptr}{Pointer through which the symbolic name is returned. The pointer must be freed with the associated JVMTI \apijvmtiref{Deallocate} function.}
 \end{apiparam}
 
-\begin{apireturn}
-TODO
-\end{apireturn}
+\apireturnempty
 
 \begin{apierror}
-\apierrordef{TODO}{TODO}
+\apierrordef{JVMTIPROF_ERROR_ILLEGAL_ARGUMENT}{\code{error} is not a valid error code.}
+\apierrordef{JVMTIPROF_ERROR_NULL_POINTER}{\code{name_ptr} is \code{NULL}.}
 \end{apierror}
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{apidef}{Set Verbose Flag}
+% TODO add jvmtiProfVerboseFlag enum to listing
 \begin{lstlisting}[language=C]
 jvmtiProfError SetVerboseFlag(
             jvmtiProfEnv* jvmtiprof_env,
@@ -821,27 +888,28 @@ jvmtiProfError SetVerboseFlag(
 \end{lstlisting}
 
 \begin{apidesc}
-TODO
+Control verbose output. This is the output which typically is sent to \code{stderr}.
+
+% TODO description of the flags
 \end{apidesc}
 
 \begin{apiphase}
-TODO
+\apiphaseany
 \end{apiphase}
 
 \begin{apicap}
-TODO
+\apicaprequired
 \end{apicap}
 
 \begin{apiparam}
-\apiparamdef{todo}{TODO}
+\apiparamdef{flag}{Which verbose flag to set.}
+\apiparamdef{value}{New value of the flag.}
 \end{apiparam}
 
-\begin{apireturn}
-TODO
-\end{apireturn}
+\apireturnempty
 
 \begin{apierror}
-\apierrordef{TODO}{TODO}
+\apierrordef{JVMTIPROF_ERROR_ILLEGAL_ARGUMENT}{\code{flag} is not a valid flag. }
 \end{apierror}
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -850,3 +918,6 @@ TODO
 
 TODO
 
+\subsection{Error Codes} \label{api:ec}
+
+TODO
