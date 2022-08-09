@@ -26,6 +26,10 @@
 % http://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html
 % http://blog.ragozin.info/2012/10/safepoints-in-hotspot-jvm.html
 
+% https://plv.colorado.edu/papers/mytkowicz-pldi10.pdf
+
+% http://jeremymanson.blogspot.com/2013/07/lightweight-asynchronous-sampling.html
+
 % https://bugs.openjdk.java.net/browse/JDK-8178287
 
 % https://assets.ctfassets.net/oxjq45e8ilak/4mfbX5FJuw0A8M00UK4uKa/ce60f2cab12408e01ce927e90ebb2f7a/Andrey_Pangin__Vadim_Tsesko._The_Art_of_JVM_Profiling.pdf
@@ -56,7 +60,21 @@
 
 % Explain COM-like nature (interface pointer)
 
+GetMethodID
+
 \subsection{JVM Tool Interface}
+
+% remove JMVTIPROF portion
+JVMTIPROF follows a similar design to the JVMTI. Agents create environments, and those environments have capabilities, events, and other functionalities. Before using any capability that goes beyond the ones provided by a standard JVM, agents must add capabilities to the environment. % TODO example
+
+Function table (\code{jvmtiEnv})
+
+There can be multiple environments
+
+During shutdown it is automatically disposed
+
+JVMTI provides functionality to intercept all Java methods, but, as expected, that significantly degrades performance. Its documentation suggests
+
 
 % Explain the docs in few words
 % and more
@@ -83,6 +101,10 @@
 % PROFILERS CAN BE OF STORAGE, MEMORY, HEAP, NETWORK, ENERGY, CPU, ETC
 
 % OTHER USES: SCHEDULER, GARBAGE COLLECTOR, JIT COMPILERS
+
+Sample application
+
+% JAVA SAFE POINT BIAS
 
 
 \section{Synchronization}

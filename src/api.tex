@@ -1,5 +1,18 @@
+\chapter{Programming Interface} \label{chap:api}
 
-\subsection{Extension Injection}
+In order to use JVMTIPROF, the agent must create and inject an JVMTIPROF environment into an existing JVMTI one. This can be done through the \hyperref[api:jvmtiProf_Create]{\code{jvmtiProf_Create}} function.
+
+Multiple JVMTIPROF environments can be injected into an JVMTI environment. Each environment retains its own state. For example, each has its own logging verbosity, configured capabilities, and registered events.
+
+% TODO explain none of the functions is CALLBACK SAFE
+
+%The programming interface is used to communicate with the infrastructure for profiling
+
+%The programming interface of jvmtiprof follows the same conventions as that of JVMTI
+
+%etc explain error codes, return values, references, prerequisite states (see jvmti docs)
+
+\section{Extension Injection}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{apidef}{Create}
@@ -80,7 +93,7 @@ This function is on the global scope i.e. not in the JVMTIPROF environment inter
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Method Call Interception}
+\section{Method Call Interception}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{apidef}{Set Method Event Flag}
@@ -137,7 +150,7 @@ TODO
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Application Execution Sampling}
+\section{Application Execution Sampling}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{apidef}{Set Execution Sampling Interval}
@@ -209,7 +222,7 @@ TODO
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Application State Sampling}
+\section{Application State Sampling}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{apidef}{Get Processor Count}
@@ -455,7 +468,7 @@ TODO
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Event Management} \label{sec:eventmgr}
+\section{Event Management} \label{sec:eventmgr}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{apidef}{Set Event Notification Mode}
@@ -605,7 +618,7 @@ TODO
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Capability}
+\section{Capability}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{apidef}{Get Potential Capabilities}
@@ -740,7 +753,7 @@ Returns the optional JVMTIPROF features which this environment currently possess
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{General}
+\section{General}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{apidef}{Dispose Environment}
@@ -914,10 +927,10 @@ Control verbose output. This is the output which typically is sent to \code{stde
 \end{apidef}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Events}
+\section{Events}
 
 TODO
 
-\subsection{Error Codes} \label{api:ec}
+\section{Error Codes} \label{api:ec}
 
 TODO

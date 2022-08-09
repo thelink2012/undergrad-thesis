@@ -1,22 +1,90 @@
 % EXPLAIN WHY NOT USING JVMTI EXTENSION MECHANISM
 
-% TODO explain none of the functions is CALLBACK SAFE
-
 \xchapter{Methodology}{}
 
-\section{Programming Interface} \label{sec:api}
+In this chapter, we present the design (Section~\ref{sec:design}) and implementation (Section~\ref{sec:impl}) of JVMTIPROF.
 
-In order to use JVMTIPROF, the agent must create and inject an JVMTIPROF environment into an existing JVMTI one. This can be done through the \hyperref[api:jvmtiProf_Create]{\code{jvmtiProf_Create}} function.
+\section{Design} \label{sec:design}
 
-Multiple JVMTIPROF environments can be injected into an JVMTI environment. Each environment retains its own state. For example, each has its own logging verbosity, configured capabilities, and registered events.
+JVMTIPROF follows a similar design to the JVMTI. Agents create environments, and those environments have capabilities, events, and other functionalities. Once the environment is disposed, all the associated capabilities are relinquished and events disabled.
 
-%The programming interface is used to communicate with the infrastructure for profiling
+\subsection{Startup \& Shutdown}
 
-%The programming interface of jvmtiprof follows the same conventions as that of JVMTI
+JVMTIPROF must be used from within a JVMTI agent. During \jvmtihref{startup}{agent startup}, when a JVMTI environment is created, a JVMTIPROF environment can be injected into the JVMTI one. This is achieved through the \apihref{Create}{\code{jvmtiProf_Create}} function. This function modifies the JVMTI environment as described later on, and returns an accompanying function table that can be used to access JVMTIPROF functionality. JVMTI functionality can continue to be accessed through its own function table.
 
-%etc explain error codes, return values, references, prerequisite states (see jvmti docs)
+During \jvmtihref{shutdown}{agent shutdown}, the JVMTIPROF environment must be disposed through the \apiref{DisposeEnvironment} function. Unlike JVMTI, the disposal must be done explicitly since the JVM doesn't know about the existence of JVMTIPROF. However, if the JVMTI environment is disposed explicitly (through its own \apijvmtiref{DisposeEnvironment}), the associated JVMTIPROF environment is automatically disposed. Disposal of the JVMTIPROF environment can be done at any time, not only during agent shutdown.
 
-\input{src/api}
+\subsection{Functionality}
+
+JVMTIPROF provides events that can be used to intercept methods, sample the execution of the application, sample thread states, critical section pressure, software \& hardware counters, and processor identifiers on which threads are running.
+
+It also provides functions that can be used to get the call stack trace of a thread during sampling, and to get the number of processors in the host machine.
+
+Similarly to the JVMTI, events can be set through the \apiref{SetEventNotificationMode} and \apiref{SetEventCallbacks} functions. Capabilities necessary for the event to work properly must be added through the \apiref{AddCapabilities} function.
+
+Details on the programming interface can be found in the appendix (Chapter~\ref{chap:api}). An example agent that samples execution and prints call stack traces can be found in listing~\ref{lst:example_execution_sampling}.
+
+\subsubsection{Execution Sampling}
+
+To sample the application, the agent must enable and set callbacks for the event \apieventref{SampleExecution}, as well as add the \code{can_generate_sample_execution_events} capability. An agent may, optionally, set the sampling interval through the \apiref{SetExecutionSampingInterval} function.
+
+
+To obtain call stack traces, an agent must possess the necessary capability and invoke \apiref{GetStackTraceAsync}. This function differs from JVMTI's \apijvmtiref{GetStackTrace} in that it can (and must) be used during sampling. This avoids the safe-point bias present in most Java profilers.
+
+
+\lstinputlisting[language=C++,caption=Example agent that uses JVMTIPROF to sample the application and print its call trace. Error handling is omitted for brevity.,label=lst:example_execution_sampling]{src/listing/demo-sample-execution.cpp}.
+
+\subsubsection{Method Interception}
+
+To intercept a Java method, an agent must obtain the method identifier and use \apiref{SetMethodEventFlag} to enable entry and/or exit events on such method. The method identifier can be obtained through JNI's \jnihref{getmethodid}{\code{GetMethodID}}. Alongside the flag, the associated event notification, callback and capabilities must be set as well.
+
+\subsubsection{Application State Sampling}
+
+Sampling the application state can be done through the events \apieventref{SampleCriticalSectionPressure}, \apieventref{SampleThreadState}, \apieventref{SampleThreadProcessor}, \apieventref{SampleHardwareCounter} and \apieventref{SampleSoftwareCounter}.
+
+If more than one of these are desired, the \apieventref{SampleApplicationState} event can be used to mitigate the overhead of multiple event notifications. This event receives a data structure containing all states which the capability to sample was set. The structure is opaque (for compatibility with change in its format) and must be accessed through auxiliary functions, such as \apiref{GetSampledHardwareCounters}.
+
+The interval of sampling of these states can be set through \apiref{SetApplicationStateSamplingInterval}.
+
+\section{Implementation} \label{sec:impl}
+
+\subsection{Injecting into the JVMTI}
+
+TODO
+
+% Disposal Injection
+
+% CAP
+% EVENT MGR
+
+\subsection{Method Interception}
+
+TODO
+
+\subsection{Call Stack Trace} \label{sec:impl_callstacktrace}
+
+TODO
+
+\subsection{Execution Sampling}
+
+TODO
+
+\subsection{Critical Section Pressure}
+
+% TODO talk about application state sampling
+
+TODO
+
+\subsection{Software \& Hardware Counters}
+
+TODO
+
+\subsection{Other Metrics}
+
+% thread_state
+% thread_processor
+
+TODO
 
 % BEGIN OLD STUFF
 \iffalse
