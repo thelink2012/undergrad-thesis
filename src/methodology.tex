@@ -10,7 +10,7 @@ JVMTIPROF follows a similar design to the JVMTI. Agents create environments, and
 
 \subsection{Startup \& Shutdown}
 
-JVMTIPROF must be used from within a JVMTI agent. During \jvmtihref{startup}{agent startup}, when a JVMTI environment is created, a JVMTIPROF environment can be injected into the JVMTI one. This is achieved through the \apihref{Create}{\code{jvmtiProf_Create}} function. This function modifies the JVMTI environment as described later on, and returns an accompanying function table that can be used to access JVMTIPROF functionality. JVMTI functionality can continue to be accessed through its own function table.
+JVMTIPROF must be used from within a JVMTI agent. During \jvmtihref{startup}{agent startup}, when a JVMTI environment is created, a JVMTIPROF environment can be injected into the JVMTI one. This is achieved through the \apihref{Create}{\code{jvmtiProf_Create}} function. This function modifies the JVMTI environment, and returns an accompanying function table that can be used to access JVMTIPROF functionality. JVMTI functionality can continue to be accessed through its own function table.
 
 During \jvmtihref{shutdown}{agent shutdown}, the JVMTIPROF environment must be disposed through the \apiref{DisposeEnvironment} function. Unlike JVMTI, the disposal must be done explicitly since the JVM doesn't know about the existence of JVMTIPROF. However, if the JVMTI environment is disposed explicitly (through its own \apijvmtiref{DisposeEnvironment}), the associated JVMTIPROF environment is automatically disposed. Disposal of the JVMTIPROF environment can be done at any time, not only during agent shutdown.
 
@@ -24,7 +24,7 @@ Similarly to the JVMTI, events can be set through the \apiref{SetEventNotificati
 
 Details on the programming interface can be found in the appendix (Chapter~\ref{chap:api}). An example agent that samples execution and prints call stack traces can be found in listing~\ref{lst:example_execution_sampling}.
 
-\subsubsection{Execution Sampling}
+\subsubsection*{Execution Sampling}
 
 To sample the application, the agent must enable and set callbacks for the event \apieventref{SampleExecution}, as well as add the \code{can_generate_sample_execution_events} capability. An agent may, optionally, set the sampling interval through the \apiref{SetExecutionSampingInterval} function.
 
@@ -34,11 +34,11 @@ To obtain call stack traces, an agent must possess the necessary capability and 
 
 \lstinputlisting[language=C++,caption=Example agent that uses JVMTIPROF to sample the application and print its call trace. Error handling is omitted for brevity.,label=lst:example_execution_sampling]{src/listing/demo-sample-execution.cpp}.
 
-\subsubsection{Method Interception}
+\subsubsection*{Method Interception}
 
-To intercept a Java method, an agent must obtain the method identifier and use \apiref{SetMethodEventFlag} to enable entry and/or exit events on such method. The method identifier can be obtained through JNI's \jnihref{getmethodid}{\code{GetMethodID}}. Alongside the flag, the associated event notification, callback and capabilities must be set as well.
+To intercept a Java method, an agent must obtain the method identifier and use \apiref{SetMethodEventFlag} to enable entry and/or exit events on such method. The method identifier can be obtained through JNI's \jnihref{getmethodid}{\code{GetMethodID}}. Alongside the flag, the associated event notification, callback and capabilities must be set.
 
-\subsubsection{Application State Sampling}
+\subsubsection*{Application State Sampling}
 
 Sampling the application state can be done through the events \apieventref{SampleCriticalSectionPressure}, \apieventref{SampleThreadState}, \apieventref{SampleThreadProcessor}, \apieventref{SampleHardwareCounter} and \apieventref{SampleSoftwareCounter}.
 
@@ -48,18 +48,61 @@ The interval of sampling of these states can be set through \apiref{SetApplicati
 
 \section{Implementation} \label{sec:impl}
 
-\subsection{Injecting into the JVMTI}
+\subsection{JVMTI Injection}
 
-TODO
+JVMTIPROF uses events and capabilities from JVMTI to implement some of its functionaliites. Therefore the JVMTI environment must be modified for JVMTIPROF and JVMTI functionalities to co-exist. For example, method interception is achieved through JVMTI's \apijvmtiref{ClassFileLoadHook} event. As such, an end-programmer wouldn't be able to use the same event for its own purpose, but since we modify JVMTI, an end-programmer can also use events that are in use by JVMTIPROF.
 
-% Disposal Injection
+This is achieved by modifying function pointers in the JVMTI function table to point to functions managed by JVMTIPROF. The \apijvmtiref{DisposeEnvironment}, \apijvmtiref{SetEventCallbacks}, \apijvmtiref{SetEventNotificationMode}, \apijvmtiref{GetCapabilities}, \apijvmtiref{AddCapabilities} and \apijvmtiref{RelinquishCapabilities} functions are modified. This injection process occurs during the \apihref{Create}{\code{jvmtiProf_Create}} function.
 
-% CAP
-% EVENT MGR
+\subsubsection*{Environment Disposal}
+
+JVMTI's \apijvmtiref{DisposeEnvironment} is modified such that it also disposes the associated JVMTIPROF environment.
+
+\subsubsection*{Event Management}
+
+The \apijvmtiref{SetEventCallbacks} function is modified such that event callbacks in use by JVMTIPROF don't end up replaced . Instead, the pointer to these newly set callbacks are stored, and whenever JVMTIPROF's callback for that event is called, the stored callback is also invoked. This way, both JVMTIPROF and the end-programmer can be notified about a JVMTI event.
+
+The \apijvmtiref{SetEventNotificationMode} hook works in a similar manner. It avoids replacing notification modes in use by JVMTIPROF, and instead stores them internally. When an event used by both occurs, the modes set by the end-programmer are inspected to decide whether the callback stored by \apijvmtiref{SetEventCallbacks} should be called.
+
+\subsubsection*{Capabilitiy Management}
+
+The capabilities functions are modified to avoid exposing capabilities set by JVMTIPROF to the end-programmer. The JVMTI's \apijvmtiref{GetCapabilities} should return an empty set of capabilities even though JVMTIPROF has set some of them (e.g. \jvmtihref{jvmtiCapabilities.can_retransform_classes}{\code{can_retransform_classes}}). \apijvmtiref{RelinquishCapabilities} must not relinquish capabilities possessed by JVMTIPROF. The state of relinquished capabilities is mainted internally by JVMTIPROF such that \apijvmtiref{GetCapabilities} can return a view that is according to what the end-programmer expects. \apijvmtiref{AddCapabilities} is also modified for this purpose.
+
+% TODO what happens above is kinda of a trampoline. Use that word.
 
 \subsection{Method Interception}
 
-TODO
+JVMTIPROF provides the ability to notify the end-programmer about method calls of interest. This is achieved by instrumenting the bytecode of the method such that its epilogue and prologue includes calls to a JVMTIPROF managed function. When the JVMTIPROF function is called, the method call event is sent upstream to the end-programmer.
+
+The target methods are set through JVMTIPROF's \apiref{SetMethodEventFlag}, and when the bytecode of the class associated with the method is being loaded, it is instrumented to include JVMTIPROF's internal calls. Class loading is intercepted through JVMTI's  \apijvmtiref{ClassFileLoadHook} event. If the class is already loaded, the event is forced by calling JVMTI's \apijvmtiref{RetransformClasses} on the class to be instrumented.
+
+\begin{lstlisting}[language=Java, escapechar=@, caption=Example instrumentation applied by method interception. Instrumented code is in green. The \code{sum} method is modified such that JVMTIPROF is notified about entries and exits on it.,label=lst:method_interception_instrumentation]
+@\color{patchadd}public class JVMTIPROF \{@
+    @\color{patchadd}static native void onMethodEntry(long methodID);@
+    @\color{patchadd}static native void onMethodExit(long methodID);@
+@\color{patchadd}\}@
+
+public class Example {
+
+    @\color{patchadd}final long sumMethodID = /* determined at runtime */;@
+
+    public int sum(int a, int b) {
+        @\color{patchadd}JVMTIPROF.onMethodEntry(sumMethodID);@
+        @\color{patchadd}try \{@
+            return a + b;
+        @\color{patchadd}\} finally \{@
+            @\color{patchadd}JVMTIPROF.onMethodExit(sumMethodID);@
+        @\color{patchadd}\}@
+    }
+}
+\end{lstlisting}
+
+An illustration of the instrumentation performed is given in Listing~\ref{lst:method_interception_instrumentation}. JVMTIPROF defines a new class with native methods to communicate back with C++. The method exit notification is enclosed in a \code{try...finally} block such that exceptions do not cause the event to be missed. The identifier of the hooked method is passed as argument to JVMTIPROF since that information is part of the event sent upstream, enabling the end-programmer to identify which method has been entered or exited.
+
+
+
+% TODO future work: create one JVMTIPROF function dynamically for each hook
+
 
 \subsection{Call Stack Trace} \label{sec:impl_callstacktrace}
 
@@ -72,7 +115,6 @@ TODO
 \subsection{Critical Section Pressure}
 
 % TODO talk about application state sampling
-
 TODO
 
 \subsection{Software \& Hardware Counters}
