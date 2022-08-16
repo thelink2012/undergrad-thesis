@@ -29,7 +29,7 @@ Details on the programming interface can be found in the appendix (Chapter~\ref{
 To sample the application, the agent must enable and set callbacks for the event \apieventref{SampleExecution}, as well as add the \code{can_generate_sample_execution_events} capability. An agent may, optionally, set the sampling interval through the \apiref{SetExecutionSampingInterval} function.
 
 
-To obtain call stack traces, an agent must possess the necessary capability and invoke \apiref{GetStackTraceAsync}. This function differs from JVMTI's \apijvmtiref{GetStackTrace} in that it can (and must) be used during sampling. This avoids the safe-point bias present in most Java profilers.
+To obtain call stack traces, an agent must possess the necessary capability and invoke \apiref{GetStackTraceAsync}. This function differs from JVMTI's \apijvmtiref{GetStackTrace} in that it can be used during sampling. This avoids the safe-point bias present in most Java profilers.
 
 
 \lstinputlisting[language=C++,caption=Example agent that uses JVMTIPROF to sample the application and print its call trace. Error handling is omitted for brevity.,label=lst:example_execution_sampling]{src/listing/demo-sample-execution.cpp}.
@@ -52,7 +52,7 @@ The interval of sampling of these states can be set through \apiref{SetApplicati
 
 JVMTIPROF uses events and capabilities from JVMTI to implement some of its functionaliites. Therefore the JVMTI environment must be modified for JVMTIPROF and JVMTI functionalities to co-exist. For example, method interception is achieved through JVMTI's \apijvmtiref{ClassFileLoadHook} event. As such, an end-programmer wouldn't be able to use the same event for its own purpose, but since we modify JVMTI, an end-programmer can also use events that are in use by JVMTIPROF.
 
-This is achieved by modifying function pointers in the JVMTI function table to point to functions managed by JVMTIPROF. The \apijvmtiref{DisposeEnvironment}, \apijvmtiref{SetEventCallbacks}, \apijvmtiref{SetEventNotificationMode}, \apijvmtiref{GetCapabilities}, \apijvmtiref{AddCapabilities} and \apijvmtiref{RelinquishCapabilities} functions are modified. This injection process occurs during the \apihref{Create}{\code{jvmtiProf_Create}} function.
+This is achieved by modifying function pointers in the JVMTI function table to point to functions managed by JVMTIPROF. The \apijvmtiref{DisposeEnvironment}, \apijvmtiref{SetEventCallbacks}, \apijvmtiref{SetEventNotificationMode}, \apijvmtiref{RetransformClasses}, \apijvmtiref{RedefineClasses}, \apijvmtiref{GetCapabilities}, \apijvmtiref{AddCapabilities} and \apijvmtiref{RelinquishCapabilities} functions are modified. This injection process occurs during the \apihref{Create}{\code{jvmtiProf_Create}} function.
 
 \subsubsection*{Environment Disposal}
 
@@ -69,6 +69,10 @@ The \apijvmtiref{SetEventNotificationMode} hook works in a similar manner. It av
 The capabilities functions are modified to avoid exposing capabilities set by JVMTIPROF to the end-programmer. The JVMTI's \apijvmtiref{GetCapabilities} should return an empty set of capabilities even though JVMTIPROF has set some of them (e.g. \jvmtihref{jvmtiCapabilities.can_retransform_classes}{\code{can_retransform_classes}}). \apijvmtiref{RelinquishCapabilities} must not relinquish capabilities possessed by JVMTIPROF. The state of relinquished capabilities is mainted internally by JVMTIPROF such that \apijvmtiref{GetCapabilities} can return a view that is according to what the end-programmer expects. \apijvmtiref{AddCapabilities} is also modified for this purpose.
 
 % TODO what happens above is kinda of a trampoline. Use that word.
+
+\subsubsection*{Class Redefinition}
+
+The \apijvmtiref{RetransformClasses} and \apijvmtiref{RedefineClasses} may need to be hooked in order to force allocation of method identifiers after class redefinition (or retransformation). This is explained in detail at Section~\ref{sec:impl_callstacktrace}.
 
 \subsection{Method Interception}
 
@@ -104,13 +108,36 @@ An illustration of the instrumentation performed is given in Listing~\ref{lst:me
 % TODO future work: create one JVMTIPROF function dynamically for each hook
 
 
-\subsection{Call Stack Trace} \label{sec:impl_callstacktrace}
-
-TODO
-
 \subsection{Execution Sampling}
 
 TODO
+
+% async-signal-safe
+
+\subsection{Call Stack Trace} \label{sec:impl_callstacktrace}
+
+JVMTI offers a function to obtain call stack traces of the Java application (\apijvmtiref{GetStackTrace}). However, it cannot be used during execution sampling since it performs non-async-signal-safe operations, such as memory allocations. To mitigate this, some profilers do not use async-signals and instead spawn a thread that takes call traces every few milliseconds.
+
+This tends to produce meaningless profilers for many reasons. First, \apijvmtiref{GetStackTrace} blocks untils all of the threads to trace from are in a safe-point. The more threads to trace, the greater the artificial slowdown. Secondly, the traces taken are always at lines of code which are safe-points, implying innacurate results.
+
+JVMTIPROF introduces \apiref{GetStackTraceAsync}, a function capable of taking stack traces in async-signal contexts. This means traces can be taken at non-safe-points, such as in the execution sampling event handler.
+
+\subsubsection*{AsyncGetCallTrace}
+
+Oracle's HotSpot JVM provides an unsupported internal API capable of async-signal-safe stack tracing. It is famously known as \code{AsyncGetCallTrace} (AGCT for short). JVMTIPROF makes use of such API to implement its \apiref{GetStackTraceAsync}. As a downside, this functionality isn't supported in other JVM implementations.
+
+AGCT requires all method identifiers to be pre-allocated, since it cannot perform memory allocations in an async-singal context. JVMTI's \apijvmtiref{ClassLoad} and \apijvmtiref{ClassPrepare} events are used for this purposes. \apijvmtiref{RetransformClasses} and \apijvmtiref{RedefineClasses} are also hooked in the JVMTI function table to re-allocate identifiers after class redefinition.
+
+\subsubsection*{Debugging Non-Safepoints}
+
+For AGCT to work, the JVM command-line flag \code{-XX:+DebugNonSafepoints} must be present. This option instructs the JVM to produce debug information for lines of code which aren't regarded as safe-points. This debug information allows AGCT to map addresses of JIT compiled code to bytecode locations.
+
+The setting of this flag in JVMTIPROF is achieved by enabling JVMTI's \apijvmtiref{CompiledMethodLoad} event. This event has the side-effect of enabling debugging information on non-safepoints. 
+
+% TODO cite https://github.com/openjdk/jdk/blob/2f3e494b80cce8e357ceac9a897c42d7e8f54af5/src/hotspot/share/prims/forte.cpp#L519-L670
+% TODO can improve https://github.com/jvm-profiling-tools/async-profiler/blob/55da899511d6e427d87c85f6ef6b08ea6a0c1746/src/profiler.cpp#L343
+% TODO -XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints still necessary if agent is attached.
+
 
 \subsection{Critical Section Pressure}
 
