@@ -1,13 +1,20 @@
 \xchapter{Background}{}
 
-TODO
+This chapter introduces the knowledge necessary to understand this work. We first introduce concepts of profiling and instrumentation, then dive into some aspects of the Java Virtual Machine (JVM for short), and finally introduce a search engine that runs on top of the JVM. We also introduce some concepts related to Linux power governors.
 
 \section{Instrumentation}
 
-% INSTRUMENTATION MAY BE USED NOT ONLY FOR PROFILING BUT FOR OTHER THINGS (WHAT?)
-% CODE COVERAGE
+Software instrumentation is a technique by which auxiliary code is added to an existing computer program. Instrumentation can be performed either statically (i.e. at compile-time) or dynamically (i.e. at runtime). Static instrumentation is performed by modifying the source code or by rewriting the target binary of the application. Dynamic instrumentation is performed after the binary has been loaded into memory.
+
+Function hooking is an instrumentation technique by which function calls are intercepted to perform additional operations before and/or after the function is invoked.
+
+Instrumentation finds many purposes, such as in profiling, debugging, program analysis, test coverage and just-in-time compilation. A profiler, for example, might hook every function of an application to measure and report their execution times.
+
+
+% CITE https://onlinelibrary.wiley.com/doi/abs/10.1002/9780470050118.ecse386
 
 \section{Profiling}
+
 
 % Profiling Methods https://homepages.cwi.nl/~boncz/msc/2020-ChristianStuart.pdf Section 2.2
 
