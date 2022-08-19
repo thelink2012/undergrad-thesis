@@ -1,11 +1,138 @@
 \xchapter{Background}{}
 
+TODO
 
+\section{Instrumentation}
+
+% INSTRUMENTATION MAY BE USED NOT ONLY FOR PROFILING BUT FOR OTHER THINGS (WHAT?)
+% CODE COVERAGE
+
+\section{Profiling}
+
+% Profiling Methods https://homepages.cwi.nl/~boncz/msc/2020-ChristianStuart.pdf Section 2.2
+
+% EXPLAIN THAT PROFILERS CAN BE STATISTICAL, INSTRUMENTATION, ETC
+% PROFILERS CAN BE OF STORAGE, MEMORY, HEAP, NETWORK, ENERGY, CPU, ETC
+
+% OTHER USES: SCHEDULER, GARBAGE COLLECTOR, JIT COMPILERS
+
+% To sample an application
+
+% signals
+% SIGNAL
+% ASYNC SIGNAL SAFE
+\iffalse
+Profilers typically need to sample the call stack of a thread every few milliseconds. A common way to achieve this on Unix-like systems is to have an application-wide timer that notifices its expiration through a signal. The \code{SIGPROF}) signal and \code{ITIMER_PROF} timer is typically used for this purposes. Once the signal is received, the call stack is sampled, by walking on the stack of the running thread.
+
+Since the timer is application-wide, it expires when the total CPU time consumed by threads exceeds the timer value. The signal is then received at the thread that caused the timer to expire. As such, threads that consume more CPU time are more prone to receive the profiling signal than other threads, which is aligned with the profiler's idea of sampling the CPU hungry parts of the application.
+\fi
+
+
+\section{Java Virtual Machine}
+
+% BYTE CODE
+% native method
+% HotSpot, OpenJ9 etc
+
+% Profiling is used in JITs (may be usefl to write about this?)
+% JIT https://homepages.cwi.nl/~boncz/msc/2020-ChristianStuart.pdf Section 2.1.3
+
+\subsection{Java Native Interface}
+
+% Explain COM-like nature (interface pointer)
+
+% contains GetMethodID
+
+\subsection{JVM Tool Interface}
+
+% JVMTI https://homepages.cwi.nl/~boncz/msc/2020-ChristianStuart.pdf Section 2.2.2 etc
+
+\iffalse
+Design to the JVMTI. Agents create environments, and those environments have capabilities, events, and other functionalities. Before using any capability that goes beyond the ones provided by a standard JVM, agents must add capabilities to the environment. % TODO example
+
+Function table (\code{jvmtiEnv})
+
+There can be multiple environments
+
+During shutdown it is automatically disposed
+
+% vm phases
+% Callback safe
+
+JVMTI provides functionality to intercept all Java methods, but, as expected, that significantly degrades performance. Its documentation suggests
+% Cite from docs that it doesn't include full-speed method entry/exit (maybe in introduction/methodology?)
+
+% Explain the docs in few words
+% and more
+\fi
+
+\subsection{Safepoint Bias}
+
+% Paper: Evaluating the Accuracy of Java Profilers
+
+% SAFEPOINT https://homepages.cwi.nl/~boncz/msc/2020-ChristianStuart.pdf Section 2.2.2 etc
+% SAFE POINTS
+% https://psy-lob-saw.blogspot.com/2014/03/where-is-my-safepoint.html
+% http://psy-lob-saw.blogspot.com/2015/12/safepoints.html
+% http://psy-lob-saw.blogspot.com/2016/02/why-most-sampling-java-profilers-are.html
+% http://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html
+% http://blog.ragozin.info/2012/10/safepoints-in-hotspot-jvm.html
+% http://jeremymanson.blogspot.com/2013/07/lightweight-asynchronous-sampling.html
+% http://jeremymanson.blogspot.com/2007/05/profiling-with-jvmtijvmpi-sigprof-and.html
+
+% AsyncGetCallTrace fails to take some samples https://bugs.openjdk.java.net/browse/JDK-8178287
+
+% The art of JVM Profiling (how async-profiler became to be)
+% https://assets.ctfassets.net/oxjq45e8ilak/4mfbX5FJuw0A8M00UK4uKa/ce60f2cab12408e01ce927e90ebb2f7a/Andrey_Pangin__Vadim_Tsesko._The_Art_of_JVM_Profiling.pdf
+
+% JEP draft of AsyncGetCallTrace https://openjdk.org/jeps/8284289
+
+TODO
+
+\section{Elasticsearch}
+
+TODO
+
+\section{Frequency Scaling}
+
+TODO
+
+% big-little
+% governors
+% DVFS
+% see daniel's master thesis 
+
+
+\iffalse
+\section{Elasticsearch}
+\fi
+
+\iffalse
+\section{Java Virtual Machine}
+
+\subsubsection{Monitors}
+
+\subsubsection{Thread Parking}
+\fi
+
+\iffalse
+\subsection{Synchronization Primitives}
+
+% Efﬁcient Tracing and Versatile Analysis of Lock Contention in Java Applications on the Virtual Machine Level -- https://dl.acm.org/doi/pdf/10.1145/2851553.2851559
+\fi
+
+\iffalse
+\subsection{Java Threads}
+
+% http://openjdk.java.net/groups/hotspot/docs/RuntimeOverview.html#Thread%20Management|outline
+% https://www.oracle.com/technetwork/java/whitepaper-135217.html
+
+\fi
+
+\iffalse
 \section{Process Scheduling}
 
 %single process in the system. In the face of the first problem, time-shared systems were developed to support concurrent users in a single machine \cite{corbato1962experimental}. For the latter, the concept of multi-programming was developed.
-
-
 
 %\subsection{Processor core scheduling}
 
@@ -14,115 +141,17 @@
 %\subsubsection{Symmetric multi-core processors}
 
 %\subsubsection{Asymmetric multi-core processors}
+\fi
 
-\section{Java Virtual Machine}
-
-% BYTE CODE
-% native method
-
-% https://homepages.cwi.nl/~boncz/msc/2020-ChristianStuart.pdf Section 2.1.3
-
-% SAFE POINTS
-% https://psy-lob-saw.blogspot.com/2014/03/where-is-my-safepoint.html
-% http://psy-lob-saw.blogspot.com/2015/12/safepoints.html
-% http://psy-lob-saw.blogspot.com/2016/02/why-most-sampling-java-profilers-are.html
-% http://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html
-% http://blog.ragozin.info/2012/10/safepoints-in-hotspot-jvm.html
-
-% https://plv.colorado.edu/papers/mytkowicz-pldi10.pdf
-
-% http://jeremymanson.blogspot.com/2013/07/lightweight-asynchronous-sampling.html
-
-% https://bugs.openjdk.java.net/browse/JDK-8178287
-
-% https://assets.ctfassets.net/oxjq45e8ilak/4mfbX5FJuw0A8M00UK4uKa/ce60f2cab12408e01ce927e90ebb2f7a/Andrey_Pangin__Vadim_Tsesko._The_Art_of_JVM_Profiling.pdf
-
-% Profiling is used in JITs (may be usefl to write about this?)
-
-% https://openjdk.org/jeps/8284289
-
-% HotSpot, OpenJ9 etc
-
-\subsection{VM Phases}
-
-% TODO
-
-\subsection{Java Threads}
-
-% http://openjdk.java.net/groups/hotspot/docs/RuntimeOverview.html#Thread%20Management|outline
-% https://www.oracle.com/technetwork/java/whitepaper-135217.html
-
-% Paper: Evaluating the Accuracy of Java Profilers
-
-\subsection{Synchronization Primitives}
-
-% Efﬁcient Tracing and Versatile Analysis of Lock Contention in Java Applications on the Virtual Machine Level -- https://dl.acm.org/doi/pdf/10.1145/2851553.2851559
-
-
-\subsubsection{Monitors}
-
-\subsubsection{Thread Parking}
-
-\subsection{Java Native Interface}
-
-% Explain COM-like nature (interface pointer)
-
-GetMethodID
-
-\subsection{JVM Tool Interface}
-
-% remove JMVTIPROF portion
-JVMTIPROF follows a similar design to the JVMTI. Agents create environments, and those environments have capabilities, events, and other functionalities. Before using any capability that goes beyond the ones provided by a standard JVM, agents must add capabilities to the environment. % TODO example
-
-Function table (\code{jvmtiEnv})
-
-There can be multiple environments
-
-During shutdown it is automatically disposed
-
-JVMTI provides functionality to intercept all Java methods, but, as expected, that significantly degrades performance. Its documentation suggests
-
-
-% Explain the docs in few words
-% and more
-
-% Cite from docs that it doesn't include full-speed method entry/exit (maybe in introduction/methodology?)
-
-% Phase
-
-% Callback safe
-
-\section{Elasticsearch}
-
-\section{Instrumentation}
-
-% INSTRUMENTATION MAY BE USED NOT ONLY FOR PROFILING BUT FOR OTHER THINGS (WHAT?)
-% CODE COVERAGE
-
-
-\section{Profiling}
-
-% https://homepages.cwi.nl/~boncz/msc/2020-ChristianStuart.pdf Section 2.2
-
-% EXPLAIN THAT PROFILERS CAN BE STATISTICAL, INSTRUMENTATION, ETC
-% PROFILERS CAN BE OF STORAGE, MEMORY, HEAP, NETWORK, ENERGY, CPU, ETC
-
-% OTHER USES: SCHEDULER, GARBAGE COLLECTOR, JIT COMPILERS
-
-Sample application
-
-% JAVA SAFE POINT BIAS
-
-
+\iffalse
 \section{Synchronization}
 
 %\subsection{Non-blocking synchronization}
 
 TODO
-
+\fi
 
 
 
 % VOCABULARY:
 % end-programmer
-
