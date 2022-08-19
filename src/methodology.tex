@@ -16,9 +16,9 @@ During \jvmtihref{shutdown}{agent shutdown}, the JVMTIPROF environment must be d
 
 \subsection{Functionality}
 
-JVMTIPROF provides events that can be used to intercept methods, sample the execution of the application, sample thread states, critical section pressure, software \& hardware counters, and processor identifiers on which threads are running.
+JVMTIPROF provides events that can be used to intercept methods and sample the execution of the application.
 
-It also provides functions that can be used to get the call stack trace of a thread during sampling, and to get the number of processors in the host machine.
+It also provides functions that can be used to get accurate call stack trace of a thread, which can be used during sampling.
 
 Similarly to the JVMTI, events can be set through the \apiref{SetEventNotificationMode} and \apiref{SetEventCallbacks} functions. Capabilities necessary for the event to work properly must be added through the \apiref{AddCapabilities} function.
 
@@ -37,14 +37,6 @@ To obtain call stack traces, an agent must possess the necessary capability and 
 \subsubsection*{Method Interception}
 
 To intercept a Java method, an agent must obtain the method identifier and use \apiref{SetMethodEventFlag} to enable entry and/or exit events on such method. The method identifier can be obtained through JNI's \jnihref{getmethodid}{\code{GetMethodID}}. Alongside the flag, the associated event notification, callback and capabilities must be set.
-
-\subsubsection*{Application State Sampling}
-
-Sampling the application state can be done through the events \apieventref{SampleCriticalSectionPressure}, \apieventref{SampleThreadState}, \apieventref{SampleThreadProcessor}, \apieventref{SampleHardwareCounter} and \apieventref{SampleSoftwareCounter}.
-
-If more than one of these are desired, the \apieventref{SampleApplicationState} event can be used to mitigate the overhead of multiple event notifications. This event receives a data structure containing all states which the capability to sample was set. The structure is opaque (for compatibility with change in its format) and must be accessed through auxiliary functions, such as \apiref{GetSampledHardwareCounters}.
-
-The interval of sampling of these states can be set through \apiref{SetApplicationStateSamplingInterval}.
 
 \section{Implementation} \label{sec:impl}
 
@@ -139,93 +131,5 @@ The setting of this flag in JVMTIPROF is achieved by enabling JVMTI's \apijvmtir
 % TODO cite https://github.com/openjdk/jdk/blob/2f3e494b80cce8e357ceac9a897c42d7e8f54af5/src/hotspot/share/prims/forte.cpp#L519-L670
 % TODO can improve https://github.com/jvm-profiling-tools/async-profiler/blob/55da899511d6e427d87c85f6ef6b08ea6a0c1746/src/profiler.cpp#L343
 % TODO -XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints still necessary if agent is attached.
-
-
-\subsection{Critical Section Pressure}
-
-% TODO talk about application state sampling
-TODO
-
-\subsection{Software \& Hardware Counters}
-
-TODO
-
-\subsection{Other Metrics}
-
-% thread_state
-% thread_processor
-
-TODO
-
-% BEGIN OLD STUFF
-\iffalse
-In this chapter we present the architecture of the agent system (Section~\ref{sec:agentsystem}) and the programming interface used by scheduling agents (Section~\ref{sec:api}).
-
-\section{The Agent System} \label{sec:agentsystem}
-
-The agent system is built on top of JVMTI and is divided in two major components: The agent controller and the scheduling agent.
-
-The agent controller is a JVMTI agent responsible for instrumenting and profiling the Java program in order to acquire useful information for the scheduler. The controller is also responsible for invoking the scheduler whenever necessary.
-
-The scheduling agent is user-customized code that is invoked by the controller to perform scheduling decisions. This agent interacts directly with the controller through an application programming interface (API). This interface allows the scheduler to query information about the Java program as well as alter its behavior.
-
-Figure~\ref{fig:agentsystem} illustrates this scheme. Every component except the Java Program is native code. Therefore the scheduling agent isn't affected by idiosyncrasies of the virtual machine (such as garbage collection) and has direct access to system calls. Both the controller and the scheduler are linked together in a shared library that is in turn given to the virtual machine on startup.
-
-\begin{figure} \label{fig:agentsystem}
-\centering
-\begin{tikzpicture}
-  \node[block,text width=8cm,fill=gray!20] (jvm) {Java Virtual Machine};
-  \node[block,below=0.1cm of jvm,text width=8cm,fill=gray!20] (os) {Operating System};
-  \node[block,above=1.1cm of jvm.west, anchor=west, text width=4cm] (acontrol) {Agent Controller};
-  \node[block,above=0.1cm of acontrol, , text width=4cm] (scagent) {Scheduling Agent};
-  \node[block,above=1.1cm of jvm.east, anchor=east, text width=3.6cm,fill=gray!20] (javaprogram) {Java Program};
-\end{tikzpicture}
-\caption{The overall architecture of the agent system. The controller works on top of the JVM and the scheduler on top of the controller. The rest of the environment (in gray) stays the same: A Java Program running on top of the JVM and the JVM on top of an operating system.}
-\end{figure}
-
-\subsection{The Agent Controller}
-
-This section explains the inner workings of the agent controller. Section~\ref{sec:agentphases} explains how the agent invokes the scheduler through the use of application phases. Section~\ref{sec:agentprof} lists and exposes the methods used to profile application data.
-
-\subsubsection{Application Phases} \label{sec:agentphases}
-
-The phase mechanism accumulates and reports information about a phase.
-
-Applications have phases. A phase is a finite time frame of execution. We give each phase a fixed amount of time. Once a phase expires, we run a checkpoint. The checkpoint is responsible for reporting all the information about the current phase and switching to the next one.
-
-The checkpoint does not necessarily invoke the scheduling agent. The condition or the timeout for the scheduler may be longer than the time of a phase. When a checkpoint invokes the scheduler, however, it only consumes information about the last phase. The distinction between phase times and scheduling times is necessary to avoid scheduling decisions based on information that is too old.
-
-We use a non-blocking data structure to accumulate all information about a phase. Any thread owning a reference to this structure is said to be a mutator of the phase. During the time between the beginning and end of a phase the mutators acquire ownership of the data structure and mutate it concurrently.
-
-This introduces three challenges: How to let the mutators mutate the current phase data concurrently? How to let the checkpoint acquire all the accumulated data for this phase without racing with the mutators? And finally, how to not introduce contention while doing both of this?
-
-The first problem is solved by having the phase data be commutative. The order on which operations happen on the data is thus irrelevant. We only allow mutators to perform atomic additions to the phase data.
-
-For the second problem, we solve it using a double-buffered phase data. Once the checkpoint is run, the current phase is swapped with the previous phase (which is empty). After this, the mutators will mutate the previous phase data (which becomes the next phase), and the checkpoint will read the current phase data.
-
-This however still does not ensure the current phase data is exclusively owned by the checkpoint. Some mutator may have acquired a reference to the phase before the swap, and may still be mutating the phase for a brief moment.
-
-To solve this issue we use a multiple readers, single writer lock on top of the buffer index and reference counter of the buffer (we cannot do this using atomic primitives. That is two data words we are dealing with).
-
-Once the lock is held by readers (the mutators), it may read the current buffer index and increment the reference counter of the acquired index. Do note multiple mutators may hold the lock at once. So this only contends when a writer (checkpoint) wishes to touch the data, which happens rarely and quickly (see below).
-
-Once the lock is held by a writer (the checkpoint), it may swap the buffer index. Every mutator that acquires the lock after this this will use and increment the reference counter of the next phase.
-
-Now the checkpoint must wait (spinning, as this is brief) until the last mutator of the current phase relinquishes ownership of it by turning the phase reference counter to zero.
-
-Now the checkpoint have exclusive access to the current phase data and the mutators are still running at full speed by mutating the next phase data.
-
-This achieves our third goal of not introducing more contention. We want to measure contention, more contention would disturb the measurements.
-
-\subsubsection{Profiled Data} \label{sec:agentprof}
-
-
-\subsection{The Scheduling Agent}
-
-
-% END OLDSTUFF
-\fi
-
-
 
 % TODO future work: Windows support
