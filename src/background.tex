@@ -1,6 +1,6 @@
 \xchapter{Background}{}
 
-This chapter introduces the knowledge necessary to understand this work. We first introduce concepts of profiling and instrumentation, then dive into some aspects of the Java Virtual Machine (JVM for short), and finally introduce a search engine that runs on top of the JVM. We also introduce some concepts related to Linux power governors.
+This chapter introduces background knowledge necessary to understand this work. We first introduce concepts of profiling and instrumentation, then dive into some aspects of the Java Virtual Machine (JVM for short), and finally introduce a search engine that runs on top of the JVM. We also introduce some concepts related to Linux power governors.
 
 \section{Instrumentation}
 
@@ -15,24 +15,19 @@ Instrumentation finds many purposes, such as in profiling, debugging, program an
 
 \section{Profiling}
 
+Software profiling is a form of dynamic program analysis used to measure performance characteristics of a computer program. A profiler can measure a range of metrics, such as execution time, memory usage and power consumption.
 
-% Profiling Methods https://homepages.cwi.nl/~boncz/msc/2020-ChristianStuart.pdf Section 2.2
+Profilers are typically used to identify hotpaths (i.e. code blocks where most of the application's time is spent). Once identified, these hotpaths can be improved, either manually (i.e. by a programmer) or automatically (i.e. through a algorithm). An optimizing compiler, for example, might use a profile to take more informed decisions or optimize certain functions more aggressively.
 
-% EXPLAIN THAT PROFILERS CAN BE STATISTICAL, INSTRUMENTATION, ETC
-% PROFILERS CAN BE OF STORAGE, MEMORY, HEAP, NETWORK, ENERGY, CPU, ETC
+Profilers can be classified in sampling profilers, on which threads are interrupted once in a while to take samples of its execution, and in instrumenting profilers, where program's code is modified to include the reporting of statistics at key locations. Sampling profilers typically produce much lower runtime overhead than the intrumented counterpart.
 
-% OTHER USES: SCHEDULER, GARBAGE COLLECTOR, JIT COMPILERS
+\subsection{Sampling in Unix-like Systems}
 
-% To sample an application
+Sampling profilers need to sample the call stack of a thread every few milliseconds. A common way to achieve this on Unix-like systems is to have an application-wide timer that notifices its expiration through a signal. The \code{SIGPROF} signal and \code{ITIMER_PROF} timer are typically used for this purposes. Once the signal is received, the call stack is sampled, by walking on the stack of the running thread.
 
-% signals
-% SIGNAL
-% ASYNC SIGNAL SAFE
-\iffalse
-Profilers typically need to sample the call stack of a thread every few milliseconds. A common way to achieve this on Unix-like systems is to have an application-wide timer that notifices its expiration through a signal. The \code{SIGPROF}) signal and \code{ITIMER_PROF} timer is typically used for this purposes. Once the signal is received, the call stack is sampled, by walking on the stack of the running thread.
+%Since the timer is application-wide, it expires when the total CPU time consumed by threads exceeds the timer value. The signal is then received at the thread that caused the timer to expire. As such, threads that consume more CPU time are more prone to receive the profiling signal than other threads, which is aligned with the profiler's attempt of sampling the hotpaths of an application.
 
-Since the timer is application-wide, it expires when the total CPU time consumed by threads exceeds the timer value. The signal is then received at the thread that caused the timer to expire. As such, threads that consume more CPU time are more prone to receive the profiling signal than other threads, which is aligned with the profiler's idea of sampling the CPU hungry parts of the application.
-\fi
+The code executed in the signal handler must be carefully crafted to be \emph{async-signal-safe}. Async-signal-safe operations are guaranteed to not interfere with operations in the interrupted thread. For example, signals may produce deadlocks if they try to hold the same locks as those held by the interrupted thread. As such, async-signal-safe code are limited to primitive memory operations and a limited subset of system calls. Given this limitation, profiling signal handlers typicallly publish the acquired samples to a separate worker thread through an async-signal-safe data structure.
 
 
 \section{Java Virtual Machine}
@@ -41,7 +36,7 @@ Since the timer is application-wide, it expires when the total CPU time consumed
 % native method
 % HotSpot, OpenJ9 etc
 
-% Profiling is used in JITs (may be usefl to write about this?)
+% Profiling is used in JITs (may be usefl to write about this?) -- profile-guided optimization
 % JIT https://homepages.cwi.nl/~boncz/msc/2020-ChristianStuart.pdf Section 2.1.3
 
 \subsection{Java Native Interface}
