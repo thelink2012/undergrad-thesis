@@ -32,14 +32,27 @@ The code executed in the signal handler must be carefully crafted to be \emph{as
 
 \section{Java Virtual Machine}
 
-% BYTE CODE
-% native method
-% HotSpot, OpenJ9 etc
+The Java Virtual Machine is an abstract computing machine. Its primary purposes is of executing code independently of the host hardware and host operating system. This machine has an instruction set and a set of memory areas. There are several implementations of the JVM. Some in hardware (e.g. picoJava), but most of them are software based (e.g. HotSpot, J9, Zing). Oracle's HotSpot is the most popular implementation.
 
-% Profiling is used in JITs (may be usefl to write about this?) -- profile-guided optimization
-% JIT https://homepages.cwi.nl/~boncz/msc/2020-ChristianStuart.pdf Section 2.1.3
+Java is a programming language that compiles to the JVM instruction set. Java found wide popularity in the software industry due to the characteristics of the Java Virtual Machine. There are several other programming languages capable of targeting the JVM, such as Scala, Kotlin, Clojure and Jython.
+
+\subsection{Execution Pipeline}
+
+A program targeting the JVM is compiled into a set of class files. A class file is a binary format containing JVM instructions (or \emph{bytecode}), symbol tables and other ancillary information. Class files are loaded, linked and initialized by the JVM's \emph{class loader}.
+
+Once classes are loaded, they are executed by the JVM. Most software implementations employ a just-in-time compiler (i.e. bytecode is compiled into the host machine instruction set as it is interpreted). The compiled code can then execute with performance characteristics comparable to that of programming languages AOT-compiled to machine code.
+
+Just-in-time compilers may employ profile-guided optimizations. Oracle's HotSpot, for example, performs tiered compilation. It has four levels of compilation, and it optimizes and deoptimizes methods between levels as the profile of the application evolves. HotSpot's JIT constructs profiles through instrumentation of method invocations and loop backedges.
+
+The Java Virtual Machine features automatic memory management through garbage collection. An unreachable instance of a object is automatically classified as garbage and freed from memory. The program may be suspended while garbage collection occurs, a process known as \emph{stop-the-world}.
+
+% CITE https://file.dev-union.cn/txt/jvm-editions/JVM17%20%E8%A7%84%E8%8C%83.pdf
+
+% TODO show class file format and/or java bytecode
 
 \subsection{Java Native Interface}
+
+% TODO native method?
 
 % Explain COM-like nature (interface pointer)
 
