@@ -42,9 +42,9 @@ A program targeting the JVM is compiled into a set of class files. A class file 
 
 Once classes are loaded, they are executed by the JVM. Most software implementations employ a just-in-time compiler (i.e. bytecode is compiled into the host machine instruction set as it is interpreted). The compiled code can then execute with performance characteristics comparable to that of programming languages AOT-compiled to machine code.
 
-Just-in-time compilers may employ profile-guided optimizations. Oracle's HotSpot, for example, performs tiered compilation. It has four levels of compilation, and it optimizes and deoptimizes methods between levels as the profile of the application evolves. HotSpot's JIT constructs profiles through instrumentation of method invocations and loop backedges.
+Just-in-time compilers may employ profile-guided optimizations. Oracle's HotSpot, for example, performs tiered compilation. It has four levels of compilation, and it optimizes and deoptimizes functions between levels as the profile of the application evolves. HotSpot's JIT constructs profiles through instrumentation of method invocations and loop backedges.
 
-The Java Virtual Machine features automatic memory management through garbage collection. An unreachable instance of a object is automatically classified as garbage and freed from memory. The program may be suspended while garbage collection occurs, a process known as \emph{stop-the-world}.
+The Java Virtual Machine features automatic memory management through garbage collection. An unreachable instance of an object is automatically classified as garbage and freed from memory. The program may be suspended while garbage collection occurs, a process known as \emph{stop-the-world}.
 
 % CITE https://file.dev-union.cn/txt/jvm-editions/JVM17%20%E8%A7%84%E8%8C%83.pdf
 
@@ -52,13 +52,47 @@ The Java Virtual Machine features automatic memory management through garbage co
 
 \subsection{Java Native Interface}
 
-% TODO native method?
+The Java Native Interface (JNI) is an application-programming interface (API) that allows JVM bytecode to interopate with native machine code. This library can be used to invoke functions written in AOT-compiled programming languages such as C++.
 
+To invoke a native function from Java, a native method is declared in the Java program. Then, during class loading, the JVM binds that method to a native symbol of a dynamic link library. Listings~\ref{lst:jni_example_java} and \ref{lst:jni_example_cpp} presents an example of this interaction.
+
+\begin{figure}[b]
+\par\noindent\begin{minipage}[t]{.45\textwidth}
+\lstinputlisting[language=Java,frame=tlrb,label=lst:jni_example_java,captionpos=b,caption={Example of a Java program containing the declaration of a native method \code{foo}. The program also loads the dynamic library \code{qux} during class loading.}]{src/listing/JNIExample.java}
+\end{minipage}\hfill
+\begin{minipage}[t]{.5\textwidth}
+\lstinputlisting[language=C++,frame=tlrb,label=lst:jni_example_cpp,captionpos=b,caption={Example of a C++ program exporting a symbol that can be bound to a Java native method. The exported symbol contains the \code{Java} prefix, the package, class, and the method names as defined in the Java program. The native method receives as parameters, the JNI environment, the Java object instace used in the method call, and the \code{bar} parameter as defined in the Java declaration. This program can be compiled into a dynamic link library e.g. \code{libqux.so} and loaded into the Java program.}]{src/listing/JNIExample.cpp}
+\end{minipage}
+\caption*{} % don't put in list of figures
+\end{figure}
+
+The JVM has a per-thread \emph{JNI Environment} that can be used by native functions to interact with the JVM. This environment is passed as argument to every native method invocation. The environment consists of a pointer to a function table and internal data opaque to the native code. The function table contains function pointers that can be used to interface with the JVM. Figure~\ref{fig:jni_function_table} illustrates the approach.
+
+The JNI interface provides functionality to invoke Java methods, access object fields, create objects, create references to objects, define classes, throw exceptions, and more. All data type interaction must occur through JNI's data types which maps to Java types e.g. JNI's \code{jobject} maps to Java's \code{Object}.
+
+\begin{figure}[h]
+\caption{TODO}
+\label{fig:jni_function_table}
+TODO
+%TODO
+\end{figure}
+
+
+
+
+
+% JNI environment
 % Explain COM-like nature (interface pointer)
 
 % contains GetMethodID
 
+
+% TODO show minimal example?
+
+
 \subsection{JVM Tool Interface}
+
+TODO
 
 % JVMTI https://homepages.cwi.nl/~boncz/msc/2020-ChristianStuart.pdf Section 2.2.2 etc
 
