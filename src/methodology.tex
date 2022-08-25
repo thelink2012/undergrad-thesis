@@ -16,7 +16,7 @@ During \jvmtihref{shutdown}{agent shutdown}, the JVMTIPROF environment must be d
 
 \subsection{Functionality}
 
-JVMTIPROF provides events that can be used to intercept methods and sample the execution of the application.
+JVMTIPROF provides events that can be used to intercept individual methods and sample the execution of the application.
 
 It also provides functions that can be used to get accurate call stack trace of a thread, which can be used during sampling.
 
@@ -32,9 +32,11 @@ To sample the application, the agent must enable and set callbacks for the event
 To obtain call stack traces, an agent must possess the necessary capability and invoke \apiref{GetStackTraceAsync}. This function differs from JVMTI's \apijvmtiref{GetStackTrace} in that it can be used during sampling. This avoids the safe-point bias present in most Java profilers.
 
 
-\lstinputlisting[language=C++,caption=Example agent that uses JVMTIPROF to sample the application and print its call trace. Error handling is omitted for brevity.,label=lst:example_execution_sampling]{src/listing/demo-sample-execution.cpp}.
+\lstinputlisting[language=C++,frame=tb,caption=Example agent that uses JVMTIPROF to sample the application and print its call trace. Error handling is omitted for brevity.,label=lst:example_execution_sampling]{src/listing/demo-sample-execution.cpp}.
 
 \subsubsection*{Method Interception}
+
+JVMTI provides functionality to intercept \emph{all} Java methods (i.e. \apijvmtiref{MethodEntry}), but it significantly degrades performance. JVMTIPROF introduces a low overhead alternative capable of intercepting individual methods.
 
 To intercept a Java method, an agent must obtain the method identifier and use \apiref{SetMethodEventFlag} to enable entry and/or exit events on such method. The method identifier can be obtained through JNI's \jnihref{getmethodid}{\code{GetMethodID}}. Alongside the flag, the associated event notification, callback and capabilities must be set.
 
@@ -72,7 +74,8 @@ JVMTIPROF provides the ability to notify the end-programmer about method calls o
 
 The target methods are set through JVMTIPROF's \apiref{SetMethodEventFlag}, and when the bytecode of the class associated with the method is being loaded, it is instrumented to include JVMTIPROF's internal calls. Class loading is intercepted through JVMTI's  \apijvmtiref{ClassFileLoadHook} event. If the class is already loaded, the event is forced by calling JVMTI's \apijvmtiref{RetransformClasses} on the class to be instrumented.
 
-\begin{lstlisting}[language=Java, escapechar=@, caption=Example instrumentation applied by method interception. Instrumented code is in green. The \code{sum} method is modified such that JVMTIPROF is notified about entries and exits on it.,label=lst:method_interception_instrumentation]
+\medskip
+\begin{lstlisting}[language=Java,frame=tb,escapechar=@,captionpos=b,caption=Example instrumentation applied by method interception. Instrumented code is in green. The \code{sum} method is modified such that JVMTIPROF is notified about entries and exits on it.,label=lst:method_interception_instrumentation]
 @\color{patchadd}public class JVMTIPROF \{@
     @\color{patchadd}static native void onMethodEntry(long methodID);@
     @\color{patchadd}static native void onMethodExit(long methodID);@

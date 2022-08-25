@@ -32,9 +32,9 @@ The code executed in the signal handler must be carefully crafted to be \emph{as
 
 \section{Java Virtual Machine}
 
-The Java Virtual Machine is an abstract computing machine. Its primary purposes is of executing code independently of the host hardware and host operating system. This machine has an instruction set and a set of memory areas. There are several implementations of the JVM. Some in hardware (e.g. picoJava), but most of them are software based (e.g. HotSpot, J9, Zing). Oracle's HotSpot is the most popular implementation.
+The Java Virtual Machine is an abstract computing machine. Its primary purposes is of executing code independently of the host hardware and host operating system. This machine has an instruction set and a set of memory areas. There are several implementations of the JVM. Some in hardware (e.g. picoJava), but most of them are software based (e.g. HotSpot, J9, Zing). Oracle's HotSpot is the most popular of these implementations.
 
-Java is a programming language that compiles to the JVM instruction set. Java found wide popularity in the software industry due to the characteristics of the Java Virtual Machine. There are several other programming languages capable of targeting the JVM, such as Scala, Kotlin, Clojure and Jython.
+Java is an object-oriented programming language that compiles to the JVM instruction set. Java found wide popularity in the software industry due to the characteristics of the Java Virtual Machine. There are several other programming languages capable of targeting the JVM, such as Scala, Kotlin, Clojure and Jython.
 
 \subsection{Execution Pipeline}
 
@@ -52,7 +52,7 @@ The Java Virtual Machine features automatic memory management through garbage co
 
 \subsection{Java Native Interface}
 
-The Java Native Interface (JNI) is an application-programming interface (API) that allows JVM bytecode to interopate with native machine code. This library can be used to invoke functions written in AOT-compiled programming languages such as C++.
+The Java Native Interface (JNI) is an application-programming interface (API) that allows JVM bytecode to interopate with native machine code. This library can be used to invoke functions written in AOT-compiled programming languages such as C++ from within a Java program.
 
 To invoke a native function from Java, a native method is declared in the Java program. Then, during class loading, the JVM binds that method to a native symbol of a dynamic link library. Listings~\ref{lst:jni_example_java} and \ref{lst:jni_example_cpp} presents an example of this interaction.
 
@@ -77,45 +77,31 @@ TODO
 %TODO
 \end{figure}
 
-
-
-
-
-% JNI environment
-% Explain COM-like nature (interface pointer)
-
-% contains GetMethodID
-
-
-% TODO show minimal example?
-
+% TODO show minimal example? (maybe mixed with the JVMTI example? or maybe not...)
 
 \subsection{JVM Tool Interface}
 
-TODO
+The JVM Tool Interface (JVMTI) is a programming interface that can be used by native agents to build development and monitoring tools for the JVM. It provides ways to inspect states and react to events of the VM. Although a JVM implementation isn't required to support the JVMTI, most of the software implementations do.
 
-% JVMTI https://homepages.cwi.nl/~boncz/msc/2020-ChristianStuart.pdf Section 2.2.2 etc
+JVMTI follows most of the approaches in JNI, such as using the same data types, and exposing its API through a function table. JVMTI environments can be created by calling JNI's \href{https://docs.oracle.com/en/java/javase/11/docs/specs/jni/invocation.html#getenv}{\code{GetEnv}} function. A native agent is compiled into a dynamic link library and loaded into the VM through command line options. The agent dynamic library should include the native symbols \code{Agent_OnLoad} and \code{Agent_OnUnload}. These functions are invoked by the VM before initialization and during termination, respectively, to offer the agent an opportunity for setup and teardown. An example agent is shown in Listing~\ref{lst:example_jvmti}.
 
-\iffalse
-Design to the JVMTI. Agents create environments, and those environments have capabilities, events, and other functionalities. Before using any capability that goes beyond the ones provided by a standard JVM, agents must add capabilities to the environment. % TODO example
+\subsubsection*{Capabilities}
 
-Function table (\code{jvmtiEnv})
+JVMTI provides several functions that can be invoked from most contexts e.g. \apijvmtiref{GetCallStackTrace} and several events that can be used to react to the VM e.g. \apijvmtiref{MethodEntry}. These functions and events may come at a cost in execution speed, start up time, and/or memory footprint. For this reason, the JVM (or JVMTI) doesn't provide by default any of these capabilities. During \code{Agent_OnLoad}, the agent must add (through JVMTI's \apijvmtiref{AddCapabilities}) the capabilities it needs (e.g. \apijvmtiref{can_generate_method_entry_events}).
 
-There can be multiple environments
+\subsubsection*{Events}
 
-During shutdown it is automatically disposed
+In addition to capability setting, events of interest can be enabled (and disabled) by calling JVMTI's \apijvmtiref{SetEventNotificationMode}. The event's callback functions can be set with \apijvmtiref{SetEventCallbacks}. Event callbacks receive their JNI and JVMTI environments as arguments, as well as additional information related to the event.
 
-% vm phases
-% Callback safe
+\subsubsection*{Environment Disposal}
 
-JVMTI provides functionality to intercept all Java methods, but, as expected, that significantly degrades performance. Its documentation suggests
-% Cite from docs that it doesn't include full-speed method entry/exit (maybe in introduction/methodology?)
+A JVMTI environment can be disposed explicitly by calling \apijvmtiref{DisposeEnvironment}, or implicitly during agent unloading. During disposal, the environment capabilities are automatically relinquished as well as its events disabled. Memory and any other additional resources allocated by the agent must be freed manually.
 
-% Explain the docs in few words
-% and more
-\fi
+\lstinputlisting[language=C++,frame=tb,float,floatplacement=b,caption={Example of a JVMTI agent that intercepts every Java method entry. During agent setup, the JVMTI environment is created and the necessary capabilities requested. Then, the method entry event is enabled and its callbacks set. Error handling is omitted for brevity.},label=lst:example_jvmti]{src/listing/example-jvmti.cpp}.
 
 \subsection{Safepoint Bias}
+
+% GetStackTrace cannot be used during sampling
 
 % Paper: Evaluating the Accuracy of Java Profilers
 
