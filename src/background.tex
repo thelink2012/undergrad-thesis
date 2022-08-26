@@ -44,7 +44,7 @@ Once classes are loaded, they are executed by the JVM. Most software implementat
 
 Just-in-time compilers may employ profile-guided optimizations. Oracle's HotSpot, for example, performs tiered compilation. It has four levels of compilation, and it optimizes and deoptimizes functions between levels as the profile of the application evolves. HotSpot's JIT constructs profiles through instrumentation of method invocations and loop backedges.
 
-The Java Virtual Machine features automatic memory management through garbage collection. An unreachable instance of an object is automatically classified as garbage and freed from memory. The program may be suspended while garbage collection occurs, a process known as \emph{stop-the-world}.
+The Java Virtual Machine features automatic memory management through garbage collection (GC). An unreachable instance of an object is automatically classified as garbage and freed from memory. The program may be suspended while garbage collection occurs, a process known as \emph{stop-the-world}.
 
 % CITE https://file.dev-union.cn/txt/jvm-editions/JVM17%20%E8%A7%84%E8%8C%83.pdf
 
@@ -99,30 +99,23 @@ A JVMTI environment can be disposed explicitly by calling \apijvmtiref{DisposeEn
 
 \lstinputlisting[language=C++,frame=tb,float,floatplacement=b,caption={Example of a JVMTI agent that intercepts every Java method entry. During agent setup, the JVMTI environment is created and the necessary capabilities requested. Then, the method entry event is enabled and its callbacks set. Error handling is omitted for brevity.},label=lst:example_jvmti]{src/listing/example-jvmti.cpp}.
 
-\subsection{Safepoint Bias}
+\subsection{Safepoints}
 
-% GetStackTrace cannot be used during sampling
+A safepoint is a point of execution in which all root object references are known, as well as heap object contents are consistent. Safepoints are used by most popular JVM implementations to assist in the implementation of operations such as garbage collection, thread dumps, and compiler deoptimization.
 
-% Paper: Evaluating the Accuracy of Java Profilers
+A thread is in a safepoint in between two interpreted bytecodes instructions, while performing I/O, running native code, contended or waiting in e.g. a lock, and at certain points of JIT compiled code.
 
-% SAFEPOINT https://homepages.cwi.nl/~boncz/msc/2020-ChristianStuart.pdf Section 2.2.2 etc
-% SAFE POINTS
-% https://psy-lob-saw.blogspot.com/2014/03/where-is-my-safepoint.html
-% http://psy-lob-saw.blogspot.com/2015/12/safepoints.html
-% http://psy-lob-saw.blogspot.com/2016/02/why-most-sampling-java-profilers-are.html
-% http://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html
-% http://blog.ragozin.info/2012/10/safepoints-in-hotspot-jvm.html
-% http://jeremymanson.blogspot.com/2013/07/lightweight-asynchronous-sampling.html
-% http://jeremymanson.blogspot.com/2007/05/profiling-with-jvmtijvmpi-sigprof-and.html
+\subsubsection*{Safepoint Polls}
 
-% AsyncGetCallTrace fails to take some samples https://bugs.openjdk.java.net/browse/JDK-8178287
+JIT compiled code can only know the root of object references through compiler generated structures known as GC maps. These maps contains which machines registers and locations of the stack frame have an object stored in. Generating these maps for every instruction would require large amounts of memory and therefore is infeasible. Additionaly, object references may be incosistent across certain instructions. As an alternative, these maps are created only for specific locations known as \emph{safepoint polls}. Safepoint polls are generated at non-inlined method entry/exits and non-counted loop-backedges.
 
-% The art of JVM Profiling (how async-profiler became to be)
-% https://assets.ctfassets.net/oxjq45e8ilak/4mfbX5FJuw0A8M00UK4uKa/ce60f2cab12408e01ce927e90ebb2f7a/Andrey_Pangin__Vadim_Tsesko._The_Art_of_JVM_Profiling.pdf
+Whenever the JVM needs to perform a operation that requires a safepoint (e.g. garbage collection), it must bring all threads to a safepoint. It does so by posting a safepoint request. Each executing thread checks the request at the next safepoint poll and pauses its execution. The time needed to bring a set of threads to a safepoint is known as \emph{time to safepoint}. Once all threads are blocked, the VM performs its operation, and subsequently resumes them.
 
-% JEP draft of AsyncGetCallTrace https://openjdk.org/jeps/8284289
+\subsubsection*{Safepoint Bias}
 
-TODO
+JVMTI provides \apijvmtiref{GetCallStackTrace}, \apijvmtiref{GetThreadListStackTrace} and \apijvmtiref{GetAllStackTraces} functions. These functions can be used to get information on the call stack of threads. These operations requires threads to be in a safepoint. Several Java profilers are built around these functions, resulting in profiles with \emph{safepoint bias}. These profiles are biased towards the location of the next safepoint poll. This can produce effects such as a profile not showing functions that do not have safepoint polls, despite their possibly high CPU usage. These profilers also introduce an additional overhead associated with time to safepoint a set of threads.
+
+% TODO RELATED WORK WITH ASGCT
 
 \section{Elasticsearch}
 

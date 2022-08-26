@@ -29,7 +29,7 @@ Details on the programming interface can be found in the appendix (Appendix~\ref
 To sample the application, the agent must enable and set callbacks for the event \apieventref{SampleExecution}, as well as add the \code{can_generate_sample_execution_events} capability. An agent may, optionally, set the sampling interval through the \apiref{SetExecutionSampingInterval} function.
 
 
-To obtain call stack traces, an agent must possess the necessary capability and invoke \apiref{GetStackTraceAsync}. This function differs from JVMTI's \apijvmtiref{GetStackTrace} in that it can be used during sampling. This avoids the safe-point bias present in most Java profilers.
+To obtain call stack traces, an agent must possess the necessary capability and invoke \apiref{GetStackTraceAsync}. This function differs from JVMTI's \apijvmtiref{GetStackTrace} in that it can be used during sampling. This avoids the safepoint bias present in most Java profilers.
 
 
 \lstinputlisting[language=C++,frame=tb,caption=Example agent that uses JVMTIPROF to sample the application and print its call trace. Error handling is omitted for brevity.,label=lst:example_execution_sampling]{src/listing/demo-sample-execution.cpp}.
@@ -107,7 +107,7 @@ An illustration of the instrumentation performed is given in Listing~\ref{lst:me
 
 JVMTIPROF provides an event to simplify the setup of sampling profilers. It is implemented by the means of a high-precision CPU timer (\code{CLOCK_PROCESS_CPUTIME_ID}) and a notification signal (\code{SIGPROF}). The timer is set to expire every interval nanoseconds (as set by \apiref{SetExecutionSampingInterval}), and once expired, the application receveis a signal at the thread that caused the timer to expire.
 
-The event handler is then invoked from the signal handler. Since the event is received in an async-signal, its code must be async-signal-safe. That is, it must not perform memory allocations, acquire locks, or perform any other operation that may interfere with the interrupted thread. This restricts the event handler to primitive operations and async-signal-safe system calls. The handler must be careful to not consume much CPU time as well, since it is blocking both an application thread and the receiving of other signals. As such, the handler set by the end-programmer must, in most cases, simply push the sampling information of interest (e.g. stack trace) into a queue, which can be consumed later (e.g. by a sampling thread) in a non-async-signal context.
+The event handler is then invoked from the signal handler. Since the event is received in an async-signal, its code must be async-signal-safe. That is, it must not perform memory allocations, acquire locks, or perform any other operation that may interfere with the interrupted thread. This restricts the event handler to primitive operations and async-signal-safe system calls. The handler must be careful to not consume much CPU time as well, since it is blocking the execution of the thread, safepoint polling, and the receiving of other signals. As such, the handler set by the end-programmer must, in most cases, simply push the sampling information of interest (e.g. stack trace) into a queue, which can be consumed later (e.g. by a sampling thread) in a non-async-signal context.
 
 % TODO future work: per-thread sampling
 
@@ -115,9 +115,9 @@ The event handler is then invoked from the signal handler. Since the event is re
 
 JVMTI offers a function to obtain call stack traces of the Java application (\apijvmtiref{GetStackTrace}). However, it cannot be used during execution sampling since it performs non-async-signal-safe operations, such as memory allocations. To mitigate this, some profilers do not use async-signals and instead spawn a thread that takes call traces every few milliseconds.
 
-This tends to produce meaningless profilers for many reasons. First, \apijvmtiref{GetStackTrace} blocks untils all of the threads to trace from are in a safe-point. The more threads to trace, the greater the artificial slowdown. Secondly, the traces taken are always at lines of code which are safe-points, implying innacurate results.
+This tends to produce meaningless profilers for many reasons. First, \apijvmtiref{GetStackTrace} blocks untils all of the threads to trace from are in a safepoint. The more threads to trace, the greater the artificial slowdown. Secondly, the traces taken are always at lines of code which are safepoints, implying innacurate results.
 
-JVMTIPROF introduces \apiref{GetStackTraceAsync}, a function capable of taking stack traces in async-signal contexts. This means traces can be taken at non-safe-points, such as in the execution sampling event handler.
+JVMTIPROF introduces \apiref{GetStackTraceAsync}, a function capable of taking stack traces in async-signal contexts. This means traces can be taken at non-safepoints, such as in the execution sampling event handler.
 
 \subsubsection*{AsyncGetCallTrace}
 
@@ -127,7 +127,7 @@ AGCT requires all method identifiers to be pre-allocated, since it cannot perfor
 
 \subsubsection*{Debugging Non-Safepoints}
 
-For AGCT to work, the JVM command-line flag \code{-XX:+DebugNonSafepoints} must be present. This option instructs the JVM to produce debug information for lines of code which aren't regarded as safe-points. This debug information allows AGCT to map addresses of JIT compiled code to bytecode locations.
+For AGCT to work, the JVM command-line flag \code{-XX:+DebugNonSafepoints} must be present. This option instructs the JVM to produce debug information for lines of code which aren't regarded as safepoints. This debug information allows AGCT to map addresses of JIT compiled code to bytecode locations.
 
 The setting of this flag in JVMTIPROF is achieved by enabling JVMTI's \apijvmtiref{CompiledMethodLoad} event. This event has the side-effect of enabling debugging information on non-safepoints. 
 
