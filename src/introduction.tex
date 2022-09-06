@@ -1,67 +1,25 @@
 \xchapter{Introduction}{}
+\label{cap:introduction}
 
-Profiling is a commonly used technique in the software industry used to identify application bottlenecks. These bottlenecks may be of different natures, such as of performance, storage or of power-consumption.
+Profiling is a commonly used technique in the software industry to identify application bottlenecks. These bottlenecks may be of different natures, such as performance, storage, or of power-consumption.
 
-Profiling is sometimes accompained by instrumentation. During instrumentation, the application's code is transformed in order to support the profiler. For example, every function may be modified to produce events at their entry and exit points. This way, the profiler can acurrately measure how much time is spent at function.
+Profiling is often accompanied by instrumentation. During instrumentation, the program is transformed to support the profiler. For example, to accurately measure the time spent in each function, their entry and exit points may be modified to collect timings.
 
-Profiling suffers from a compromise between accuracy and performance. Too much interference to the application may cause its performance characteristics to change, making the profiling results useless. On the other hand, too little interference mayn't produce enough data for accurate results.
-
-% Describe chapters
+Profiling suffers from a compromise between precision and performance. Too much interference to the application may cause its performance characteristics to change, producing an unreliable profile. On the other hand, little interference may not yield sufficient data for an accurate profile.
 
 \section{Motivation}
 
-Profilers are typically self-contained programs, reporting metrics and events about another application through an user-interface. Some, however, work as a library, providing the functionality necessary to instrument and profile applications. In such case, programmers may execute arbitrary code based on the metrics and events reported to them.
+Profilers are typically freestanding programs, reporting metrics and events about a target application. These profilers are tailored to a specific purpose and do not allow customization points.
 
-This is useful for a number of reasons. One of them is to build the self-contained profilers themselves. After all, they need to have code reacting to the profiled application in order to report them to the end user-interface. Another reason is to modify the behavior of an application without modifying its source code. This change in behaviour may be related to the profiling metrics or unrelated to them. The former can be exemplified by a process scheduler. The latter, by improving small pieces of an existing application without rebuilding them, which may be impractical in cases where the source code is private, lost, or time demanding to build.
+Tool-building systems are frequently used to construct profilers. These systems permit installation of events on the target program, which can be acted upon by client-driven code. Aside from profiling, these systems can be used to perform program analysis, create custom schedulers, and modify snippets of a compiled program.
 
-The JVM does provide an API for the purpose of developing program analysis tools. This library is called JVMTI. However, such library provides only bare-bones functionality, leaving it to the programmer to build higher-level functionalities on top of it. For example, in order to instrument a method call, one needs to intercept the loading of bytecode, parse its data structures, modify them, and rebuild it as bytecode.
-
-%The JVM is chosen as the target platform for this work due to its widespread use in server-class applications. An target platform is important in order to focus the efforts of mitigating the performance overhead involved in profiling and instrumentation.
-% TODO citations
-% CITE: Kafka, Casandra, and others.
-% ALSO CITE: According to data from Alibaba’s datacenter, more than 90% of latency-critical cloud services are written and deployed as Java applications [17 - Who Limits the Resource Efficiency of My Datacenter: An Analysis of Alibaba Datacenter Traces]
-
-\section{Related Work}
-
-TODO
-
-% TODO maybe the "JVM does provide an API..." paragraph in the last section goes in the Related Work section.
-
-%% Scheduling
-% Compiler-assisted Adaptive Program Scheduling in big.LITTLE Systems
-% Hipster: Hybrid Task Manager for Latency-Critical CloudWorkloads
-
-
-%% TODO profilers and java profilers
-
-%% Profilers with user-customized code
-% + An Efficient and Generic Event-based Profiler Frameworkfor Dynamic Languages
-% + Portable and accurate samplingprofiling for Java
-% + A Portable CPU-ManagementFramework for Java
-% + ProfBuilder:  A Package for Rapidly Building Java ExecutionProfilers
-
-%% Path tracing and CCT
-% + Exploiting  Hardware  Performance  Counters  with  Flow  and  Context  Sensitive  Profiling 
-% A Portable Sampling-Based  Profiler for Java Virtual Machines
-
-%% Async
-% https://dl.acm.org/doi/pdf/10.1145/2568088.2576759
-
-% Related:
-% Sampling Profiler API for sw/hw counters (remember openmp stuff?)
-
-% Async Profiler
-% Coz
-% Free-Lunch
-% JNIF
-% ASM
-
-% PAPER Profiling and Tracing Support for Java Applications
+The Java Virtual Machine Tool Infrastructure (JVMTI) is an example of a tool-building system. It is used by most existing Java profilers. However, this infrastructure provides only bare-bones features, leaving it to the client to build high-level functionality. For example, to instrument the entry point of a selected method, the client needs to intercept the loading of compiled code, parse its data structures, transform them, and rebuild the block of code based on said structures.
 
 \section{Contribution}
 
-In this work, we present JVMTIPROF, a library extending the JVMTI. We use the same patters, idioms, and types, extending its interface to provide more (and easier) functionalities for profiling and instrumentation agents. This way, developers of these agents can focus their effort on methods instead of in the supporting infrastructure.
+In this work, we present JVMTIPROF, a programming interface extending the JVMTI. We use the same patterns, idioms, and types, extending its interface to provide more (and straightforward) functionalities. This way, developers of profiling and instrumentation agents can focus their effort on methods instead of on the supporting infrastructure. We also demonstrate how the JVMTI can be extended without modifying its source code.
 
-% TODO we also contribue by showing how to extend JVMTI
+\section{Thesis Structure}
 
+Chapter~\ref{cap:background} discusses this thesis's background and related work. Chapter~\ref{cap:methodology} presents the design and implementation of JVMTIPROF. Chapter~\ref{cap:evaluation} demonstrates its use in the instrumentation of a search engine. Chapter~\ref{cap:conclusion} wraps up the work and points at future directions.
 
