@@ -1,9 +1,10 @@
 
 jvmtiProfEnv *jvmtiprof;
 
-JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm,
-                                    char *options,
-                                    void *reserved)
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *vm,
+             char *options,
+             void *reserved)
 {
     jvmtiEnv *jvmti;
 
@@ -33,15 +34,17 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm,
     return 0;
 }
 
-JNIEXPORT void JNICALL Agent_OnUnload(JavaVM *vm)
+JNIEXPORT void JNICALL
+Agent_OnUnload(JavaVM *vm)
 {
     jvmtiprof->DisposeEnvironment();
 }
 
-void JNICALL OnSampleExecution(jvmtiProfEnv *jvmtiprof,
-                               jvmtiEnv *jvmti,
-                               JNIEnv *jni,
-                               jthread thread)
+void JNICALL
+OnSampleExecution(jvmtiProfEnv *jvmtiprof,
+                  jvmtiEnv *jvmti,
+                  JNIEnv *jni,
+                  jthread thread)
 {
     char printbuf[256];
     jvmtiProfError err;
@@ -51,7 +54,7 @@ void JNICALL OnSampleExecution(jvmtiProfEnv *jvmtiprof,
     jvmtiProfFrameInfo frames[max_frame_count];
     jint frame_count;
 
-    // fprintf isn't async-signal-safe, thus use write.
+    // fprintf isn't async-signal-safe, thus we use write.
     snprintf(printbuf, sizeof(printbuf), "sampling...\n");
     write(STDERR_FILENO, printbuf, strlen(printbuf));
 
@@ -69,4 +72,3 @@ void JNICALL OnSampleExecution(jvmtiProfEnv *jvmtiprof,
         write(STDERR_FILENO, printbuf, strlen(printbuf));
     }
 }
-

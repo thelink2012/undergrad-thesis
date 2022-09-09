@@ -13,7 +13,7 @@ Profilers are typically freestanding programs, reporting metrics and events abou
 
 Tool-building systems are frequently used to construct profilers. These systems permit installation of events on the target program, which can be acted upon by client-driven code. Aside from profiling, these systems can be used to perform program analysis, create custom schedulers, and modify snippets of a compiled program.
 
-The Java Virtual Machine Tool Infrastructure (JVMTI) is an example of a tool-building system. It is used by most existing Java profilers. However, this infrastructure provides only bare-bones features, leaving it to the client to build high-level functionality. For example, to instrument the entry point of a selected method, the client needs to intercept the loading of compiled code, parse its data structures, transform them, and rebuild the block of code based on said structures.
+The Java Virtual Machine Tool Infrastructure (JVMTI) is an example of a tool-building system. It is used by most existing Java profilers. However, this infrastructure provides only bare-bones features, leaving it to the client to build high-level functionality. For example, to instrument the entry point of a selected method, the client needs to intercept the loading of compiled code, parse its data structures, transform them, and rebuild the code based on said structures.
 
 \section{Contribution}
 

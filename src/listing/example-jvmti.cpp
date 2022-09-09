@@ -5,7 +5,6 @@ Agent_OnLoad(JavaVM *vm,
              char *options,
              void *reserved)
 {
-    jvmtiError err;
     jvmtiEnv *jvmti;
 
     vm->GetEnv((void **)&jvmti, JVMTI_VERSION);
@@ -17,7 +16,7 @@ Agent_OnLoad(JavaVM *vm,
 
     jvmtiEventCallbacks callbacks;
     memset(&callbacks, 0, sizeof(callbacks));
-    callbacks.MethodEntry = MethodEntry;
+    callbacks.MethodEntry = OnMethodEntry;
 
     jvmti->SetEventNotificationMode(
             JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL);
@@ -27,10 +26,10 @@ Agent_OnLoad(JavaVM *vm,
 }
 
 void JNICALL
-MethodEntry(jvmtiEnv *jvmti_env,
-            JNIEnv *jni_env,
-            jthread thread,
-            jmethodID method)
+OnMethodEntry(jvmtiEnv *jvmti_env,
+              JNIEnv *jni_env,
+              jthread thread,
+              jmethodID method)
 {
     printf("method %p called by thread %p\n",
             (void*) method, (void*) thread);
