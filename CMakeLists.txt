@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(jvmtiprof)
 
 find_package(JNI REQUIRED)
+add_subdirectory(jnif)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(JVMTIPROF_PEDANTIC_COMPILE_OPTIONS -pedantic-errors -pedantic -Wall -Wextra -Werror

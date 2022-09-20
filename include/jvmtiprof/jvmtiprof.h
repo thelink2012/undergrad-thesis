@@ -157,11 +157,11 @@ typedef void (*JNICALL jvmtiProfEventSampleSoftwareCounter)(
 
 typedef void (*JNICALL jvmtiProfEventSpecificMethodEntry)(
         jvmtiProfEnv* jvmtiprof_env, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
-        jthread thread, jmethodID method);
+        jthread thread, jint hook_id);
 
 typedef void (*JNICALL jvmtiProfEventSpecificMethodExit)(
         jvmtiProfEnv* jvmtiprof_env, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
-        jthread thread, jmethodID method);
+        jthread thread, jint hook_id);
 
 typedef struct
 {
@@ -272,9 +272,12 @@ struct jvmtiProfInterface_
     /* Method Call Interception */
 
     jvmtiProfError(JNICALL* SetMethodEventFlag)(jvmtiProfEnv* jvmtiprof_env,
-                                                jmethodID method_id,
+                                                const char* class_name,
+                                                const char* method_name,
+                                                const char* method_signature,
                                                 jvmtiProfMethodEventFlag flags,
-                                                jboolean enable);
+                                                jboolean enable,
+                                                jint* hook_id_ptr);
 };
 
 struct jvmtiProfEnv_
@@ -416,11 +419,16 @@ struct jvmtiProfEnv_
                 this, sample_data, max_counters, counter_buffer_ptr, count_ptr);
     }
 
-    jvmtiProfError SetMethodEventFlag(jmethodID method_id,
+    jvmtiProfError SetMethodEventFlag(const char* class_name,
+                                      const char* method_name,
+                                      const char* method_signature,
                                       jvmtiProfMethodEventFlag flags,
-                                      jboolean enable)
+                                      jboolean enable,
+                                      jint* hook_id_ptr)
     {
-        return functions->SetMethodEventFlag(this, method_id, flags, enable);
+        return functions->SetMethodEventFlag(
+                this, class_name, method_name, method_signature, 
+                flags, enable, hook_id_ptr);
     }
 #endif
 };

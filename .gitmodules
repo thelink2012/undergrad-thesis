@@ -1,0 +1,3 @@
+[submodule "jnif"]
+	path = jnif
+	url = https://gitlab.com/acuarica/jnif.git

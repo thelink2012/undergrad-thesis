@@ -495,10 +495,20 @@ static jvmtiProfError JNICALL jvmtiProfEnv_GetSampledSoftwareCounters(
 }
 
 static jvmtiProfError JNICALL jvmtiProfEnv_SetMethodEventFlag(
-        jvmtiProfEnv* jvmtiprof_env, jmethodID method_id,
-        jvmtiProfMethodEventFlag flags, jboolean enable)
+        jvmtiProfEnv* jvmtiprof_env,
+        const char* class_name,
+        const char* method_name,
+        const char* method_signature,
+        jvmtiProfMethodEventFlag flags,
+        jboolean enable,
+        jint* hook_id_ptr)
 {
-    return JVMTIPROF_ERROR_NOT_IMPLEMENTED;
+    // TODO check phase
+    // TODO check params
+    JvmtiProfEnv& impl = JvmtiProfEnv::from_external(*jvmtiprof_env);
+    return impl.set_method_event_flag(
+            class_name, method_name, method_signature,
+            flags, enable, hook_id_ptr);
 }
 }
 

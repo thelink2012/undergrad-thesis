@@ -1,6 +1,7 @@
 #pragma once
 #include "sampling_thread.hpp"
 #include "execution_sampler.hpp"
+#include "method_hooker.hpp"
 #include <cstddef>
 #include <jvmtiprof/jvmtiprof.h>
 #include <memory>
@@ -60,6 +61,15 @@ public:
     void vm_start(JNIEnv* jni_env);
     void vm_init(JNIEnv* jni_env, jthread thread);
     void vm_death(JNIEnv* jni_env);
+    void class_file_load_hook(JNIEnv* jni_env,
+                              jclass class_being_redefined,
+                              jobject loader,
+                              const char* name,
+                              jobject protection_domain,
+                              jint class_data_len,
+                              const unsigned char* class_data,
+                              jint* new_class_data_len,
+                              unsigned char** new_class_data);
 
     auto set_event_notification_mode(jvmtiEventMode mode, jvmtiEvent event_type,
                                      jthread event_thread) -> jvmtiError;
@@ -94,9 +104,21 @@ public:
     auto set_execution_sampling_interval(jlong nanos_interval)
             -> jvmtiProfError;
 
+    auto set_method_event_flag(
+            const char* class_name,
+            const char* method_name,
+            const char* method_signature,
+            jvmtiProfMethodEventFlag flags,
+            jboolean enable,
+            jint* hook_id_ptr) -> jvmtiProfError;
+
     void post_application_state_sample();
 
     void post_execution_sample();
+
+    void post_method_entry(jint hook_id);
+
+    void post_method_exit(jint hook_id);
 
 private:
     static void patch_jvmti_interface(jvmtiInterface_1&);
@@ -122,8 +144,10 @@ private:
         bool vm_start_enabled_globally;
         bool vm_init_enabled_globally;
         bool vm_death_enabled_globally;
+        bool class_file_load_hook_enabled_globally;
         bool sample_all_enabled_globally;
         bool sample_execution_enabled_globally;
+        bool method_hook_enabled_globally;
     };
 
     struct EventCallbacks
@@ -131,8 +155,11 @@ private:
         jvmtiEventVMStart vm_start;
         jvmtiEventVMInit vm_init;
         jvmtiEventVMDeath vm_death;
+        jvmtiEventClassFileLoadHook class_file_load_hook;
         jvmtiProfEventSampleApplicationState sample_all;
         jvmtiProfEventSampleExecution sample_execution;
+        jvmtiProfEventSpecificMethodEntry method_entry;
+        jvmtiProfEventSpecificMethodExit method_exit;
     };
 
     jvmtiProfEnv m_external;
@@ -155,5 +182,9 @@ private:
 
     std::unique_ptr<SamplingThread> m_sampling_thread;
     std::unique_ptr<ExecutionSampler> m_execution_sampler;
+    std::unique_ptr<MethodHooker> m_method_hooker;
+
+    // once enabled cannot be disabled
+    bool m_has_control_of_class_file_load_hook_mode{false};
 };
 }

@@ -31,6 +31,24 @@ void JNICALL vm_death(jvmtiEnv* jvmti_env, JNIEnv* jni_env)
 
     return JvmtiProfEnv::from_jvmti_env(*jvmti_env).vm_death(jni_env);
 }
+
+void JNICALL class_file_load_hook(jvmtiEnv *jvmti_env,
+                                  JNIEnv* jni_env,
+                                  jclass class_being_redefined,
+                                  jobject loader,
+                                  const char* name,
+                                  jobject protection_domain,
+                                  jint class_data_len,
+                                  const unsigned char* class_data,
+                                  jint* new_class_data_len,
+                                  unsigned char** new_class_data)
+{
+
+    return JvmtiProfEnv::from_jvmti_env(*jvmti_env)
+        .class_file_load_hook(jni_env, class_being_redefined, loader,
+                              name, protection_domain, class_data_len,
+                              class_data, new_class_data_len, new_class_data);
+}
 }
 
 namespace
@@ -157,6 +175,7 @@ auto JvmtiProfEnv::intercepts_event(jvmtiEvent event_type) const -> bool
         case JVMTI_EVENT_VM_START:
         case JVMTI_EVENT_VM_INIT:
         case JVMTI_EVENT_VM_DEATH:
+        case JVMTI_EVENT_CLASS_FILE_LOAD_HOOK:
             return true;
         default:
             return false;
@@ -194,6 +213,13 @@ auto JvmtiProfEnv::set_event_notification_mode(jvmtiEventMode mode,
         case JVMTI_EVENT_VM_DEATH:
             m_event_modes.vm_death_enabled_globally = static_cast<bool>(mode);
             break;
+        case JVMTI_EVENT_CLASS_FILE_LOAD_HOOK:
+            // TODO per-thread
+            m_event_modes.class_file_load_hook_enabled_globally = static_cast<bool>(mode);
+            if(!m_has_control_of_class_file_load_hook_mode)
+                return m_original_jvmti_interface->SetEventNotificationMode(
+                        m_jvmti_env, mode, event_type, event_thread);
+            break;
         default:
             assert(false);
             return JVMTI_ERROR_INTERNAL;
@@ -212,6 +238,8 @@ auto JvmtiProfEnv::set_event_callbacks(const jvmtiEventCallbacks* callbacks,
     if(static_cast<size_t>(size_of_callbacks) > sizeof(jvmtiEventCallbacks))
         return JVMTI_ERROR_ILLEGAL_ARGUMENT;
 
+    // TODO callback setting must be an atomic operation! data races ahead.
+
     jvmtiEventCallbacks mut_callbacks;
     memset(&mut_callbacks, 0, sizeof(mut_callbacks));
 
@@ -220,6 +248,7 @@ auto JvmtiProfEnv::set_event_callbacks(const jvmtiEventCallbacks* callbacks,
         m_callbacks.vm_init = nullptr;
         m_callbacks.vm_start = nullptr;
         m_callbacks.vm_death = nullptr;
+        m_callbacks.class_file_load_hook = nullptr;
     }
     else
     {
@@ -228,11 +257,13 @@ auto JvmtiProfEnv::set_event_callbacks(const jvmtiEventCallbacks* callbacks,
         m_callbacks.vm_start = mut_callbacks.VMStart;
         m_callbacks.vm_init = mut_callbacks.VMInit;
         m_callbacks.vm_death = mut_callbacks.VMDeath;
+        m_callbacks.class_file_load_hook = mut_callbacks.ClassFileLoadHook;
     }
 
     mut_callbacks.VMStart = ::vm_start;
     mut_callbacks.VMInit = ::vm_init;
     mut_callbacks.VMDeath = ::vm_death;
+    mut_callbacks.ClassFileLoadHook = ::class_file_load_hook;
 
     return m_original_jvmti_interface->SetEventCallbacks(
             m_jvmti_env, &mut_callbacks, sizeof(mut_callbacks));
@@ -271,6 +302,15 @@ auto JvmtiProfEnv::set_event_notification_mode(jvmtiEventMode mode,
             m_event_modes.sample_execution_enabled_globally = mode_as_bool;
             break;
         }
+        case JVMTIPROF_EVENT_SPECIFIC_METHOD_ENTRY:
+        case JVMTIPROF_EVENT_SPECIFIC_METHOD_EXIT:
+        {
+            if(!m_capabilities.can_generate_specific_method_entry_events
+                    || !m_capabilities.can_generate_specific_method_exit_events)
+                return JVMTIPROF_ERROR_MUST_POSSESS_CAPABILITY;
+            m_event_modes.method_hook_enabled_globally = mode_as_bool;
+            break;
+        }
         default:
             return JVMTIPROF_ERROR_ILLEGAL_ARGUMENT;
     }
@@ -290,6 +330,8 @@ auto JvmtiProfEnv::set_event_callbacks(const jvmtiProfEventCallbacks* callbacks,
     {
         m_callbacks.sample_all = nullptr;
         m_callbacks.sample_execution = nullptr;
+        m_callbacks.method_entry = nullptr;
+        m_callbacks.method_exit = nullptr;
     }
     else
     {
@@ -298,6 +340,8 @@ auto JvmtiProfEnv::set_event_callbacks(const jvmtiProfEventCallbacks* callbacks,
 
         m_callbacks.sample_all = callbacks->SampleApplicationState;
         m_callbacks.sample_execution = callbacks->SampleExecution;
+        m_callbacks.method_entry = callbacks->SpecificMethodEntry;
+        m_callbacks.method_exit = callbacks->SpecificMethodExit;
     }
 
     return JVMTIPROF_ERROR_NONE;
@@ -322,8 +366,8 @@ auto JvmtiProfEnv::compute_onload_capabilities() -> jvmtiProfCapabilities
     // is complicated in further stages.
     // TODO(thelink2012): Implement retransformation on other stages?
     // TODO(thelink2012): Intercept in a more intelligent way?
-    /*capabilities.can_generate_specific_method_entry_events = true;
-    capabilities.can_generate_specific_method_exit_events = true;*/
+    capabilities.can_generate_specific_method_entry_events = true;
+    capabilities.can_generate_specific_method_exit_events = true;
 
     // The following samples can only be enabled during OnLoad because they
     // require interception of the monitor events. Since interception of
@@ -499,6 +543,70 @@ void JvmtiProfEnv::refresh_capabilities(JNIEnv* jni_env)
             ExecutionSampler::relinquish_capability();
         }
     }
+
+    if(m_capabilities.can_generate_specific_method_entry_events
+            || m_capabilities.can_generate_specific_method_exit_events)
+    {
+        if(!m_has_control_of_class_file_load_hook_mode)
+        {
+            jvmtiCapabilities caps;
+            memset(&caps, 0, sizeof(caps));
+            caps.can_generate_all_class_hook_events = true;
+            // TODO we don't hook AddCapabilities at the client side, as such
+            // they can disable capabilities we enable. fix it!
+            if(m_original_jvmti_interface->AddCapabilities(m_jvmti_env, &caps))
+            {
+                // TODO report failure through logging interface
+                fprintf(stderr, "failed to add can_generate_all_class_hook_events\n");
+            }
+            else
+            {
+                if(m_original_jvmti_interface->SetEventNotificationMode(
+                            m_jvmti_env,
+                            JVMTI_ENABLE,
+                            JVMTI_EVENT_CLASS_FILE_LOAD_HOOK,
+                            NULL))
+                {
+                    // TODO report failure through logging interface
+                    fprintf(stderr, "failed to set JVMTI_EVENT_CLASS_FILE_LOAD_HOOK\n");
+                }
+                else
+                {
+                    m_has_control_of_class_file_load_hook_mode = true;
+                }
+            }
+        }
+
+        if(m_has_control_of_class_file_load_hook_mode
+            && !m_method_hooker)
+        {
+            m_method_hooker = std::make_unique<MethodHooker>(*this);
+        }
+    }
+    else
+    {
+        // TODO
+    }
+}
+
+auto JvmtiProfEnv::set_method_event_flag(
+        const char* class_name,
+        const char* method_name,
+        const char* method_signature,
+        jvmtiProfMethodEventFlag flags,
+        jboolean enable,
+        jint* hook_id_ptr) -> jvmtiProfError
+{
+    if(!m_capabilities.can_generate_specific_method_entry_events
+            || !m_capabilities.can_generate_specific_method_exit_events
+            || !m_method_hooker)
+        return JVMTIPROF_ERROR_MUST_POSSESS_CAPABILITY;
+
+    // TODO check validity of parameters
+
+    return m_method_hooker->set_method_event_flag(
+            class_name, method_name, method_signature,
+            flags, enable, hook_id_ptr);
 }
 
 auto JvmtiProfEnv::jni_env() -> JNIEnv*
@@ -506,6 +614,7 @@ auto JvmtiProfEnv::jni_env() -> JNIEnv*
     JNIEnv* env;
 
     // TODO(thelink2012): Provide a faster implementation that caches this.
+    // Possible soltuion: TLS. But it is not exactly async-signal-safe. But should it be?
 
     jint jni_err = m_vm->GetEnv(reinterpret_cast<void**>(&env),
                                 JNI_VERSION_1_6);
@@ -580,9 +689,40 @@ void JvmtiProfEnv::post_execution_sample()
     }
 }
 
+void JvmtiProfEnv::post_method_entry(jint hook_id)
+{
+    // TODO not checking for capabilities and modes.
+    // unhooking should happen at the MethodHooker
+    // by removing the hook from the bytecode
+
+    // TODO pass jni_env(), but first must optimize it
+    // TODO pass jthread
+
+    if(m_callbacks.method_entry)
+        m_callbacks.method_entry(&external(), m_jvmti_env, nullptr, nullptr, hook_id);
+}
+
+void JvmtiProfEnv::post_method_exit(jint hook_id)
+{
+    // TODO see comment above
+
+    // TODO pass jni_env(), but first must optimize it
+    // TODO pass jthread
+
+    if(m_callbacks.method_exit)
+        m_callbacks.method_exit(&external(), m_jvmti_env, nullptr, nullptr, hook_id);
+}
+
 void JvmtiProfEnv::vm_start(JNIEnv* jni_env)
 {
     m_phase = JVMTI_PHASE_START;
+
+    if(m_method_hooker)
+    {
+        // TODO move to a MethodHooker::vm_start
+        if(!m_method_hooker->define_helper_class(*jni_env))
+            puts("failure!!!!");
+    }
 
     if(m_event_modes.vm_start_enabled_globally && m_callbacks.vm_start)
         m_callbacks.vm_start(m_jvmti_env, jni_env);
@@ -647,6 +787,52 @@ void JvmtiProfEnv::vm_death(JNIEnv* jni_env)
     m_phase = JVMTI_PHASE_DEAD;
 
     // TODO(thelink2012): Maybe we should dettach from the JVMTI env here?
+}
+
+void JvmtiProfEnv::class_file_load_hook(
+        JNIEnv* jni_env,
+        jclass class_being_redefined,
+        jobject loader,
+        const char* name,
+        jobject protection_domain,
+        jint class_data_len,
+        const unsigned char* class_data,
+        jint* new_class_data_len,
+        unsigned char** new_class_data)
+{
+    unsigned char* hooker_class_data{nullptr};
+    jint hooker_class_data_len{-1};
+
+    if(m_method_hooker)
+    {
+        m_method_hooker->class_file_load_hook(
+                jni_env, class_being_redefined,
+                loader, name, protection_domain,
+                class_data_len, class_data,
+                &hooker_class_data_len, &hooker_class_data);
+
+        if(hooker_class_data != nullptr)
+        {
+            class_data = hooker_class_data;
+            class_data_len = hooker_class_data_len;
+        }
+    }
+
+    if(m_event_modes.class_file_load_hook_enabled_globally
+            && m_callbacks.class_file_load_hook)
+    {
+        m_callbacks.class_file_load_hook(
+                m_jvmti_env, jni_env, class_being_redefined,
+                loader, name, protection_domain,
+                class_data_len, class_data,
+                new_class_data_len, new_class_data);
+    }
+
+    if(*new_class_data == nullptr && hooker_class_data)
+    {
+        *new_class_data = hooker_class_data;
+        *new_class_data_len = hooker_class_data_len;
+    }
 }
 
 // TODO do not spawn sampling thead if does not have capability
