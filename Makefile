@@ -8,7 +8,11 @@ pdf: $(TARGET).pdf
 
 $(TARGET): $(TARGET).pdf
 
-$(TARGET).pdf: $(TARGET).tex $(TARGET).bib src/*.tex src/listing/*
+$(TARGET).pdf: $(TARGET).tex \
+               $(TARGET).bib \
+               src/*.tex \
+               src/listing/* \
+               src/figure/*
 	$(LATEX) $(TARGET).tex
 	$(BIBTEX) $(TARGET)
 	$(LATEX) $(TARGET).tex
