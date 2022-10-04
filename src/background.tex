@@ -5,139 +5,132 @@ This chapter introduces the background knowledge necessary to understand this wo
 
 \section{Instrumentation}
 
-Software instrumentation is a technique by which auxiliary code is added to an existing computer program. Instrumentation can be performed either statically (i.e., at compile-time) or dynamically (i.e., at runtime). Static instrumentation is accomplished by modifying the source code or by rewriting the application target binary. Dynamic instrumentation is performed after the binary has been loaded into memory.
+\emph{Software instrumentation} is a technique that adds auxiliary code to an existing computer program. Instrumentation can be performed either statically (i.e., at compile-time) or dynamically (i.e., at runtime). Static instrumentation is accomplished by modifying the source code or rewriting the application target binary, and dynamic instrumentation is performed after the binary is in-memory.
 
-Function hooking is an instrumentation technique by which function calls are intercepted to perform additional operations before or after the function is invoked.
+\emph{Function hooking} is an instrumentation technique by which function calls are intercepted to perform additional operations before or after the function is invoked.
 
-Instrumentation has many applications, such as in profiling, debugging, program analysis, code coverage, and just-in-time compilation. For example, a profiler might hook every function of an application to measure and report its execution times.
-
+Instrumentation has many applications, such as in profiling, debugging, program analysis, code coverage, and just-in-time compilation. For example, a profiler might hook every function of an application to measure and report its execution time.
 
 % CITE https://onlinelibrary.wiley.com/doi/abs/10.1002/9780470050118.ecse386
 
 \section{Profiling}
 
-Software profiling is a form of dynamic program analysis used to measure the performance characteristics of a computer program. A profiler can estimate a range of metrics, such as execution time, memory usage, and power consumption.
+\emph{Software profiling} is a form of dynamic program analysis used to measure the performance characteristics of a computer program. A profiler can estimate a range of metrics, such as execution time, memory usage, and energy consumption.
 
 Profilers are typically used to identify hot paths (i.e., code blocks where most of the application's time is spent). Once identified, these hot paths can be improved, either manually (i.e., by a programmer) or automatically (i.e., through an algorithm). An optimizing compiler, for example, might use a profile to make more informed decisions or optimize certain functions more aggressively.
 
-Profilers can be classified as sampling profilers, in which threads are interrupted once in a while to take samples of its execution, and instrumenting profilers, where the program's code is modified to include the reporting of statistics at critical locations. Sampling profilers typically produce much lower runtime overhead than the instrumented counterpart.
+Profilers can be classified as sampling profilers, in which threads are interrupted once in a while to take samples of its execution, and instrumenting profilers, where the program's code is modified at critical locations to include the reporting of statistics. Sampling profilers typically produce much lower runtime overhead than the instrumented counterpart.
 
 \subsection{Sampling in Unix-like Systems}
 
-Sampling profilers need to sample the call stack of a thread every few milliseconds. A common way to achieve this on Unix-like systems is to have an application-wide timer that notifies its expiration through a signal. The \code{SIGPROF} signal and \code{ITIMER_PROF} timer are typically used for this purpose. Once the signal is received, the call stack is sampled, by walking on the stack of the running thread.
+Sampling profilers need to sample the call stack of a thread every few milliseconds. A common way to achieve this on Unix-like systems is to have an application-wide timer that notifies its expiration through a signal. The \code{SIGPROF} signal and \code{ITIMER_PROF} timer are typically used for this purpose. Once the signal is received, the call stack is sampled by walking on the stack of the running thread.
 
-The code executed in the signal handler must be carefully crafted to be \emph{async-signal-safe}. Async-signal-safe operations are guaranteed to not interfere with operations in the interrupted thread. For example, signals may produce deadlocks if they try to hold the same locks as those held by the interrupted thread. As such, async-signal-safe code is limited to primitive memory operations and a subset of system calls. Given this limitation, profiling signal handlers typically publish the acquired samples to a separate worker thread through an async-signal-safe data structure.
+The code executed in the signal handler must be carefully crafted to be \emph{async-signal-safe}. Async-signal-safe operations are guaranteed to not interfere with operations in the interrupted thread. For example, signals may produce deadlocks if they try to hold the same locks as the interrupted thread. As such, async-signal-safe code is limited to primitive memory operations and a subset of system calls. Given this limitation, profiling signal handlers typically publish the acquired samples to a separate worker thread through an async-signal-safe data structure.
 
 
 \section{Java Virtual Machine}
 
-The Java Virtual Machine is an abstract computing machine. Its primary purpose is to execute code independently of the host hardware and host operating system. This machine has an instruction set and a set of memory areas. There are several implementations of the JVM. Some are in hardware (e.g. picoJava), but most of them are software-based (e.g. HotSpot, J9, Zing). Oracle's HotSpot is the most popular of these implementations.
+The \emph{Java Virtual Machine} is an abstract computing machine. Its primary purpose is to execute code independently of the host hardware and operating system. This machine has an instruction set and a set of memory areas. There are several implementations of the JVM. Some are in hardware (e.g., picoJava), but most are software-based (e.g., HotSpot, J9, Zing). Oracle's HotSpot is the most popular of these implementations.
 
-Java is an object-oriented programming language that compiles to the JVM instruction set. Java found wide popularity in the software industry due to the characteristics of the Java Virtual Machine. There are several other programming languages capable of targeting the JVM, such as Scala, Kotlin, Clojure, and Jython.
+\emph{Java} is an object-oriented programming language that compiles to the JVM instruction set. Java found wide popularity in the software industry due to the characteristics of the Java Virtual Machine. Several other programming languages are capable of targeting the JVM, such as Scala, Kotlin, Clojure, and Jython.
 
 % TODO citations
 % CITE: Kafka, Casandra, and others.
-% ALSO CITE: According to data from Alibaba’s datacenter, more than 90% of latency-critical cloud services are written and deployed as Java applications [17 - Who Limits the Resource Efficiency of My Datacenter: An Analysis of Alibaba Datacenter Traces]
+% ALSO CITE: According to data from Alibaba's datacenter, more than 90% of latency-critical cloud services are written and deployed as Java applications [17 - Who Limits the Resource Efficiency of My Datacenter: An Analysis of Alibaba Datacenter Traces]
 
 \subsection{Execution Pipeline}
 
-A program targeting the JVM is compiled into a set of class files. A class file is a binary format containing JVM instructions (or \emph{bytecode}), symbol tables, and other ancillary information. Class files are loaded, linked, and initialized by the JVM's \emph{class loader}.
+A program targeting the JVM compiles into a set of class files. A \textit{class file} is a binary format containing JVM instructions (or \emph{bytecode}), symbol tables, and other ancillary information. Class files are loaded, linked, and initialized by the JVM's \emph{class loader}.
 
-Once classes are loaded, they are executed by the JVM. Most software implementations employ a just-in-time compiler (i.e., bytecode is compiled into the host machine instruction set as it is interpreted). The compiled code can then execute with performance characteristics comparable to that of programming languages AOT-compiled to machine code.
+The JVM executes classes once they are loaded. Most software implementations employ a just-in-time compiler (i.e., bytecode compiles into the host machine instruction set as it gets interpreted). The compiled code can execute with performance characteristics comparable to programming languages AOT-compiled to machine code.
 
-Just-in-time compilers may employ profile-guided optimizations. Oracle's HotSpot, for example, performs tiered compilation. It has four levels of compilation, and it optimizes and deoptimizes functions between levels as the profile of the application evolves. HotSpot's JIT constructs profiles through instrumentation of method invocations and loop backedges.
+Just-in-time compilers may employ profile-guided optimizations. Oracle's HotSpot, for example, performs tiered compilation. It has four levels of compilation which optimizes and deoptimizes functions between levels as the application profile evolves. HotSpot's JIT constructs profiles through instrumentation of method invocations and loop backedges.
 
-The Java Virtual Machine features automatic memory management through garbage collection (GC). An unreachable instance of an object is automatically classified as garbage and freed from memory. The program may be suspended while garbage collection occurs, a process known as \emph{stop-the-world}.
+The Java Virtual Machine features automatic memory management through garbage collection (GC). An unreachable instance of an object is automatically classified as garbage and freed from memory. The program may suspend during garbage collection, a process known as \emph{stop-the-world}.
 
 % CITE https://file.dev-union.cn/txt/jvm-editions/JVM17%20%E8%A7%84%E8%8C%83.pdf
 
-% TODO show class file format and/or java bytecode
-
 \subsection{Java Native Interface}
 
-The Java Native Interface (JNI) is an application programming interface (API) that allows JVM bytecode to interoperate with native machine code. This library can be used to invoke functions written in AOT-compiled programming languages such as C++ from within a Java program.
+The \emph{Java Native Interface (JNI)} is an application programming interface (API) that allows JVM bytecode to interoperate with native machine code. This library can invoke functions written in AOT-compiled programming languages such as C++ from within a Java program.
 
-To invoke a native function from Java, a native method is declared in the Java program. Then, during class loading, the JVM binds that method to a native symbol of a dynamic link library. Listings~\ref{lst:jni_example_java} and \ref{lst:jni_example_cpp} presents an example of this interaction.
+Native methods are declared in the Java program, and during class loading, the JVM binds that method to a native symbol of a dynamic link library. Listings~\ref{lst:jni_example_java} and \ref{lst:jni_example_cpp} presents an example of this interaction.
 
 \begin{figure}[b]
 \par\noindent\begin{minipage}[t]{.45\textwidth}
 \lstinputlisting[language=Java,frame=tlrb,label=lst:jni_example_java,captionpos=b,caption={Example of a Java program containing the declaration of a native method \code{foo}. The program also loads the dynamic library \code{qux} during class loading.}]{src/listing/JNIExample.java}
 \end{minipage}\hfill
 \begin{minipage}[t]{.5\textwidth}
-\lstinputlisting[language=C++,frame=tlrb,label=lst:jni_example_cpp,captionpos=b,caption={Example of a C++ program exporting a symbol that can be bound to a Java native method. The exported symbol contains the \code{Java} prefix, the package, class, and the method names as defined in the Java program. The native method receives as parameters, the JNI environment, the Java object instance used in the method call, and the \code{bar} parameter as defined in the Java declaration. This program can be compiled into a dynamic link library e.g. \code{libqux.so} and loaded into the Java program.}]{src/listing/JNIExample.cpp}
+\lstinputlisting[language=C++,frame=tlrb,label=lst:jni_example_cpp,captionpos=b,caption={Example of a C++ program exporting a symbol that can be bound to a Java native method. The exported symbol contains the \code{Java} prefix, the package, class, and the method names defined in the Java program. The native method receives the JNI environment, the Java object instance used in the method call, and the \code{bar} parameter defined in the Java declaration. This program can be compiled into a dynamic link library, e.g., \code{libqux.so} and loaded into the Java program.}]{src/listing/JNIExample.cpp}
 \end{minipage}
-\caption*{} % don't put in list of figures
+\caption*{} % used to not put in list of figures
 \end{figure}
 
-The JVM has a per-thread \emph{JNI Environment} that can be used by native functions to interact with the JVM. This environment is passed as an argument to every native method invocation. The environment consists of a pointer to a function table and internal data opaque to the native code. The function table contains function pointers that can be used to interface with the JVM. Figure~\ref{fig:jni_function_table} illustrates the approach.
-
-The JNI interface provides functionality to invoke Java methods, access object fields, create objects, create references to objects, define classes, throw exceptions, and more. All data type interaction must occur through JNI's data types which map to Java types e.g. JNI's \code{jobject} maps to Java's \code{Object}.
+The JVM has a per-thread \emph{JNI Environment} that native functions can use to interact with the JVM. This environment is passed as an argument to every native method invocation. The environment consists of a pointer to a function table and internal data opaque to the native code. The function table contains function pointers that can be used to interface with the JVM. Figure~\ref{fig:jni_function_table} illustrates the approach.
 
 \begin{figure}[h]
-\caption{TODO}
+\centering
+\includegraphics[width=0.81\textwidth]{src/figure/jni_function_table.png}
+\caption{The function table approach. Agents have access to an \code{JNIEnv*}, which points to a per-thread JNI environment. This per-thread environment contains a pointer to a function table shared between the environments. The function table holds the JNI interface that agents can use to interact with the JVM.}
 \label{fig:jni_function_table}
-TODO
-%TODO
 \end{figure}
 
-% TODO show minimal example? (maybe mixed with the JVMTI example? or maybe not...)
+The JNI interface provides functionality to invoke Java methods, access object fields, create objects, create references to objects, define classes, throw exceptions, and more. All data type interaction must occur through JNI's data types which map to Java types, e.g., JNI's \code{jobject} maps to Java's \code{Object}.
 
 \subsection{JVM Tool Interface}
 
-The JVM Tool Interface (JVMTI) is a programming interface that can be used by native agents to build development and monitoring tools for the JVM. It provides ways to inspect states and react to events of the VM. Although a JVM implementation isn't required to support the JVMTI, most software implementations do.
+The \emph{JVM Tool Interface (JVMTI)} is a programming interface that native agents can use to build development and monitoring tools for the JVM. It provides ways to inspect states and react to events of the VM. Although a JVM implementation is not required to support the JVMTI, most software implementations do.
 
-JVMTI follows most of the approaches in JNI, such as using the same data types and exposing its API through a function table. JVMTI environments can be created by calling JNI's \href{https://docs.oracle.com/en/java/javase/11/docs/specs/jni/invocation.html#getenv}{\code{GetEnv}} function. A native agent is compiled into a dynamic link library and loaded into the VM through command line options. The agent's dynamic library should include the native symbols \code{Agent_OnLoad} and \code{Agent_OnUnload}. These functions are invoked by the VM before initialization and during termination, respectively, to offer the agent an opportunity for setup and tear-down. An example agent is shown in Listing~\ref{lst:example_jvmti}.
+JVMTI follows most of the approaches in JNI, such as using the same data types and exposing its API through a function table. JVMTI environments can be created by calling JNI's \href{https://docs.oracle.com/en/java/javase/11/docs/specs/jni/invocation.html#getenv}{\code{GetEnv}} function. A native agent is compiled into a dynamic link library and loaded into the VM through command line options. The agent's dynamic library should include the native symbols \code{Agent_OnLoad} and \code{Agent_OnUnload}. The VM invokes these functions during initialization and termination, respectively, to offer the agent an opportunity for setup and tear-down. An example agent is shown in Listing~\ref{lst:example_jvmti}.
 
 \subsubsection*{Capabilities}
 
-JVMTI provides several functions that can be invoked from most contexts e.g. \apijvmtiref{GetCallStackTrace} and several events that can be used to react to the VM e.g. \apijvmtiref{MethodEntry}. These functions and events may come at a cost in execution speed, start-up time, and/or memory footprint. For this reason, the JVM (or JVMTI) doesn't provide any capability by default. During \code{Agent_OnLoad}, the agent must add (through JVMTI's \apijvmtiref{AddCapabilities}) the capabilities it needs (e.g. \apijvmtiref{can_generate_method_entry_events}).
+JVMTI provides several functions that can be invoked from most contexts, e.g., \apijvmtiref{GetCallStackTrace} and several events that can be used to react to the VM, e.g., \apijvmtiref{MethodEntry}. These functions and events may come at a cost in execution speed, start-up time, and memory footprint. For this reason, the JVM (or JVMTI) does not provide any capability by default. During \code{Agent_OnLoad}, the agent must add (through JVMTI's \apijvmtiref{AddCapabilities}) the capabilities it needs (e.g. \apijvmtiref{can_generate_method_entry_events}).
 
 \subsubsection*{Events}
 
-In addition to capability setting, events of interest can be enabled (and disabled) by calling JVMTI's \apijvmtiref{SetEventNotificationMode}. The event's callback functions can be set with \apijvmtiref{SetEventCallbacks}. Event callbacks receive their JNI and JVMTI environments as arguments, as well as additional information related to the event.
+In addition to capability setting, events of interest can be enabled (and disabled) by calling JVMTI's \apijvmtiref{SetEventNotificationMode}. The event's callback functions can be set with \apijvmtiref{SetEventCallbacks}. Event callbacks receive their JNI and JVMTI environments as arguments, plus additional information related to the event.
 
 \subsubsection*{Environment Disposal}
 
-A JVMTI environment can be disposed of explicitly by calling \apijvmtiref{DisposeEnvironment}, or implicitly during agent unloading. During disposal, the environment capabilities are automatically relinquished as well as its events are disabled. Memory and any other additional resources allocated by the agent must be freed manually.
+A JVMTI environment can be disposed explicitly by calling \apijvmtiref{DisposeEnvironment} or implicitly during agent unloading. During disposal, the environment capabilities are automatically relinquished and its events disabled. Memory and any other additional resources the agent allocates must be freed manually.
 
-\lstinputlisting[language=C++,frame=tb,float,floatplacement=b,caption={Example of a JVMTI agent that intercepts every Java method entry. During agent setup, the JVMTI environment is created and the necessary capabilities are requested. Then, the method entry event is enabled and its callbacks are set. Error handling is omitted for brevity.},label=lst:example_jvmti]{src/listing/example-jvmti.cpp}.
+\lstinputlisting[language=C++,frame=tb,float,floatplacement=b,caption={Example of a JVMTI agent that intercepts every Java method entry. Agent setup creates a JVMTI environment and requests the necessary capabilities from it. Then, the method entry event is enabled, and its callbacks are set. Error handling is omitted for brevity.},label=lst:example_jvmti]{src/listing/example-jvmti.cpp}.
 
 \subsection{Safepoints}
 
-A safepoint is a point of execution in which all root object references are known, as well as heap object contents are consistent. Safepoints are used by the most popular JVM implementations to assist in the implementation of operations such as garbage collection, thread dumps, and compiler deoptimization.
+A \emph{safepoint} is a point of execution in which all root object references are known, and heap object contents are consistent. The most popular JVM implementations use safepoints to assist in implementing operations such as garbage collection, thread dumps, and compiler deoptimization.
 
-A thread is in a safepoint in between two interpreted bytecode instructions, while performing I/O, running native code, contended or waiting in e.g. a lock, and at certain points of JIT-compiled code.
+A thread is in a safepoint while performing I/O, in between two interpreted bytecode instructions, when running native code, when contended or waiting in a lock, and at specific points of JIT-compiled code.
 
 \subsubsection*{Safepoint Polls}
 
-JIT compiled code can only know the root of object references through compiler-generated structures known as GC maps. These maps contain which machine registers and locations of the stack frame have an object stored in. Generating these maps for every instruction would require large amounts of memory and therefore is infeasible. Moreover, object references may be inconsistent across certain instructions. As an alternative, these maps are created only for specific locations known as \emph{safepoint polls}. Safepoint polls are generated at non-inlined method entry/exits and non-counted loop backedges.
+JIT compiled code can only know the root of object references through compiler-generated structures known as GC maps. These maps contain which machine registers and locations of the stack frame the objects are stored. Generating these maps for every instruction would require large amounts of memory and therefore is infeasible. Moreover, object references may be inconsistent across particular instructions. As an alternative, these maps are created only for specific locations known as \emph{safepoint polls}. Safepoint polls are generated at non-inlined method entry/exits and non-counted loop backedges.
 
-Whenever the JVM needs to perform an operation that requires a safepoint (e.g. garbage collection), it must bring all threads to a safepoint. It does so by posting a safepoint request. Each executing thread checks the request at the next safepoint poll and pauses its execution. The time needed to bring a set of threads to a safepoint is known as \emph{time to safepoint}. Once all threads are blocked, the VM performs its operation and subsequently resumes them.
+Whenever the JVM needs to perform an operation that requires a safepoint (e.g., garbage collection), it must bring all threads to a safepoint. It does so by posting a safepoint request. Each executing thread checks the request at the next safepoint poll and pauses its execution. The time needed to bring a set of threads to a safepoint is known as \emph{time to safepoint}. Once all threads are blocked, the VM performs its operation and resumes the paused threads when finished.
 
 \subsubsection*{Safepoint Bias}
 
-JVMTI provides \apijvmtiref{GetCallStackTrace}, \apijvmtiref{GetThreadListStackTrace} and \apijvmtiref{GetAllStackTraces} functions. These functions can be used to get information on the call stack of threads. These operations require threads to be in a safepoint. Several Java profilers are built around these functions, resulting in profiles with \emph{safepoint bias}. These profiles are biased towards the location of the next safepoint poll. This can produce effects such as a profile not showing functions that do not have safepoint polls, despite their possibly high CPU usage. These profilers also introduce an additional overhead associated with time to safepoint a set of threads.
+JVMTI provides \apijvmtiref{GetCallStackTrace}, \apijvmtiref{GetThreadListStackTrace} and \apijvmtiref{GetAllStackTraces} functions. These functions can be used to get information on the call stack of threads. These operations require threads to be in a safepoint. Several Java profilers are built around these functions, resulting in profiles with \emph{safepoint bias}. These profiles are biased towards the location of the next safepoint poll, producing effects such as a profile not showing functions that do not have safepoint polls, despite their possibly high CPU usage. These profilers also introduce an additional overhead associated with time to safepoint a set of threads.
 
-% TODO GetCallStackTrace etc cannot be used in async signal context
+% TODO GetCallStackTrace and others cannot be used in async signal context
 
 % TODO RELATED WORK WITH ASGCT
 
+
 \section{Elasticsearch}
 
-TODO
+\emph{Elasticsearch} is an open-source search engine built atop Apache Lucene, a Java library that executes indexing and querying/scoring functions. Like Lucene, Elasticsearch is written in Java and is mainly responsible for serving the search results through its HTTP interface while also allowing Lucene to scale among clusters.
+
+As a distributed application, multiple nodes or machines comprise an Elastichsearch cluster. This cluster handles all the non-Lucene tasks, such as query distribution among shards, creation and replication of shards, and maintenance. Each node contains one or more shards, where each holds a search index. A request query sent by the user goes through all the shards.
 
 \section{Frequency Scaling}
 
-TODO
+\emph{Dynamic Frequency Scaling (DFS)} is a technique for improving power efficiency on modern multi-core systems. The operating frequency of a particular core increases or decreases according to the application's demand. Given that power consumption is linearly proportional to core frequency, a lower frequency will result in less power consumption.
 
-% big-little
-% governors
-% DVFS
-% see daniel's master thesis 
+Linux implements DFS in its Ondemand governor, which attempts to minimize energy consumption by changing the CPU speed according to the actual load based on processor utilization thresholds. The Ondemand governor has been Linux's default since kernel 3.4.
 
-
-
-
+The kernel also provides a userspace governor, in which the user chooses a fixed frequency. 
 
 
 % TODO
