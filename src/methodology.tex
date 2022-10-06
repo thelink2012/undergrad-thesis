@@ -23,7 +23,7 @@ Appendix~\ref{chap:api} presents details on the programming interface. An exampl
 
 \subsubsection*{Execution Sampling}
 
-To sample the application, an agent must add the \code{can_generate_sample_execution_events} capability and set event callbacks for \apieventref{SampleExecution}. The \apiref{SetExecutionSampingInterval} function can adjust the sampling interval.
+To sample the application, an agent must add the \code{can_generate_sample_execution_events} capability and set an event callback for \apieventref{SampleExecution}. The \apiref{SetExecutionSampingInterval} function can adjust the sampling interval.
 
 
 Call stack traces can be obtained by using \apiref{GetStackTraceAsync}. The \code{can_get_stack_trace_asynchronously} capability must be set. Unlike JVMTI's \apijvmtiref{GetStackTrace}, this function is async-signals-safe and does not require a safepoint.
@@ -42,7 +42,7 @@ Clients can hook methods of interest by passing their signature to \apiref{SetMe
 
 JVMTIPROF uses events and capabilities from JVMTI to implement some of its functionalities. Method interception, for instance, is performed through JVMTI's \apijvmtiref{ClassFileLoadHook} event. This poses a challenge because an API client would not be able to use that event for other purposes. Therefore JVMTI needs to be modified for its functionality and JVMTIPROF to co-exist.
 
-The changes are achieved by redirecting function pointers in the JVMTI function table to JVMTIPROF-managed functions. The \apijvmtiref{DisposeEnvironment}, \apijvmtiref{SetEventCallbacks}, \apijvmtiref{SetEventNotificationMode}, \apijvmtiref{RetransformClasses}, \apijvmtiref{RedefineClasses}, \apijvmtiref{GetCapabilities}, \apijvmtiref{AddCapabilities} and \apijvmtiref{RelinquishCapabilities} functions are hooked. Such patching occurs during \apihref{Create}{\code{jvmtiProf_Create}}.
+The changes are achieved by redirecting function pointers in the JVMTI function table to JVMTIPROF-managed functions. The \apijvmtiref{DisposeEnvironment}, \apijvmtiref{SetEventCallbacks}, \apijvmtiref{SetEventNotificationMode}, \apijvmtiref{RetransformClasses}, \apijvmtiref{RedefineClasses}, \apijvmtiref{GetCapabilities}, \apijvmtiref{AddCapabilities} and \apijvmtiref{RelinquishCapabilities} functions are hooked. Patching occurs during \apihref{Create}{\code{jvmtiProf_Create}}.
 
 \subsubsection*{Environment Disposal}
 
@@ -96,7 +96,7 @@ An illustration of the instrumentation performed is given in Listing~\ref{lst:me
 
 JVMTIPROF provides an event to simplify the setup of sampling profilers. It is implemented by the means of a high-precision CPU timer (\code{CLOCK_PROCESS_CPUTIME_ID}) and a notification signal (\code{SIGPROF}). The timer is set to expire at certain intervals, as set by \apiref{SetExecutionSampingInterval}, and once expired, the application receives a signal at the thread that caused the timer to expire.
 
-The signal handler then sends the event upstream. The event handler must be async-signal-safe, restricting the client to primitive operations and system calls. It must also be careful not to consume much CPU time since it blocks the calling thread, safepoint polling, and receiving other signals. Usually, the handler must push the information of interest (e.g., stack trace) into a queue, which can be consumed, e.g., by a sampling thread in a non-async-signal context.
+The signal handler then sends the event upstream. The event handler must be async-signal-safe, restricting the client to primitive operations and system calls. It must also be careful not to consume much CPU time since it blocks the calling thread, safepoint polling, and receiving other signals. Usually, the handler must push the information of interest (e.g., stack trace) into a queue, which can be consumed, e.g., by a worker thread in a non-async-signal context.
 
 \subsection{Call Stack Trace} \label{sec:impl_callstacktrace}
 
