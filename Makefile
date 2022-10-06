@@ -11,6 +11,7 @@ $(TARGET): $(TARGET).pdf
 $(TARGET).pdf: $(TARGET).tex \
                $(TARGET).bib \
                src/*.tex \
+               src/*.bib \
                src/listing/* \
                src/figure/*
 	$(LATEX) $(TARGET).tex
@@ -28,5 +29,6 @@ clean:
 	rm -f *.lof
 	rm -f *.lot
 	rm -f *.toc
+	rm -f *.lol
 
 .PHONY: all clean pdf
