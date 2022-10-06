@@ -25,7 +25,7 @@ Profilers can be classified as sampling profilers, in which threads are interrup
 
 Sampling profilers need to sample the call stack of a thread every few milliseconds. A common way to achieve this on Unix-like systems is to have an application-wide timer that notifies its expiration through a signal. The \code{SIGPROF} signal and \code{ITIMER_PROF} timer are typically used for this purpose. Once the signal is received, the call stack is sampled by walking on the stack of the running thread.
 
-The code executed in the signal handler must be carefully crafted to be \emph{async-signal-safe}. Async-signal-safe operations are guaranteed to not interfere with operations in the interrupted thread. For example, signals may produce deadlocks if they try to hold the same locks as the interrupted thread. As such, async-signal-safe code is limited to primitive memory operations and a subset of system calls. Given this limitation, profiling signal handlers typically publish the acquired samples to a separate worker thread through an async-signal-safe data structure.
+The code executed in the signal handler must be carefully crafted to be \emph{async-signal-safe}. Async-signal-safe operations are guaranteed not to interfere with operations in the interrupted thread. For example, signals may produce deadlocks if they try to hold the same locks as the interrupted thread. As such, async-signal-safe code is limited to primitive memory operations and a subset of system calls. Given this limitation, profiling signal handlers typically publish the acquired samples to a separate worker thread through an async-signal-safe data structure.
 
 
 \section{Java Virtual Machine}
@@ -105,7 +105,7 @@ A thread is in a safepoint while performing I/O, in between two interpreted byte
 
 \subsubsection*{Safepoint Polls}
 
-JIT compiled code can only know the root of object references through compiler-generated structures known as GC maps. These maps contain which machine registers and locations of the stack frame the objects are stored. Generating these maps for every instruction would require large amounts of memory and therefore is infeasible. Moreover, object references may be inconsistent across particular instructions. As an alternative, these maps are created only for specific locations known as \emph{safepoint polls}. Safepoint polls are generated at non-inlined method entry/exits and non-counted loop backedges.
+JIT-compiled code can only know the root of object references through compiler-generated structures known as GC maps. These maps contain which machine registers and locations of the stack frame the objects are stored. Generating these maps for every instruction would require large amounts of memory and therefore is infeasible. Moreover, object references may be inconsistent across particular instructions. As an alternative, these maps are created only for specific locations known as \emph{safepoint polls}. Safepoint polls are generated at non-inlined method entry/exits and non-counted loop backedges.
 
 Whenever the JVM needs to perform an operation that requires a safepoint (e.g., garbage collection), it must bring all threads to a safepoint. It does so by posting a safepoint request. Each executing thread checks the request at the next safepoint poll and pauses its execution. The time needed to bring a set of threads to a safepoint is known as \emph{time to safepoint}. Once all threads are blocked, the VM performs its operation and resumes the paused threads when finished.
 

@@ -29,6 +29,8 @@ Creates a JVMTIPROF environment and injects it into the given JVMTI environment.
 
 This function is on the global scope i.e. not in the JVMTIPROF environment interface pointer.
 
+% TODO must be used before any other JVMTI functionality is used
+
 % TODO explain about the hooks (and injection) during the introduction of the API and/or in the methodology
 \end{apidesc}
 
@@ -106,10 +108,15 @@ typedef enum
 
 jvmtiProfError SetMethodEventFlag(
             jvmtiProfEnv* jvmtiprof_env,
-            jmethodID method_id,
+            const char* class_name,
+            const char* method_name,
+            const char* method_signature,
             jvmtiProfMethodEventFlag flags,
-            jboolean enable);
+            jboolean enable,
+            jint* hook_id_ptr);
 \end{lstlisting}
+
+% TODO fix me
 
 \begin{apidesc}
 Sets whether the given method should generate entry/exit events.
