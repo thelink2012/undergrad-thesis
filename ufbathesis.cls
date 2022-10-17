@@ -13,7 +13,7 @@
 %%%    Date                = "26 Nov 2014",
 %%%    Filename            = "ufbathesis.cls",
 %%%    Address             = "Universidade Federal da Bahia
-%%%                           Instituto de Matematica",
+%%%                           Instituto de Computacao",
 %%%    Telephone           = "+55 71 3283-6292",
 %%%    Email               = "flach@dcc.ufba.br",
 %%%    Keywords            = "LaTeX, Thesis, Dissertation",
@@ -104,9 +104,9 @@
   \RequirePackage[dvips,usenames]{color}
   \RequirePackage{hyperref}
   \hypersetup{colorlinks=true,
-              linkcolor=black,
-              urlcolor=black,
-              citecolor=black}
+            linkcolor=black,
+            urlcolor=black,
+            citecolor=black}
 \fi
 \RequirePackage[alf,abnt-etal-cite=1]{abntex2cite}
 %\RequirePackage[backend=biber,style=abnt,language=english]{biblatex}
@@ -224,7 +224,7 @@ grau de \@degree\ em \@majorfield.}
 \def\institute#1{%
   \let\@showinstitute=1
   \gdef\@institute{#1}}
-\institute{Instituto de Matem\'{a}tica}
+\institute{Instituto de Computa\c{c}\~{a}o}
 
 \def\program#1{%
   \gdef\@program{#1}}
@@ -488,6 +488,33 @@ grau de \@degree\ em \@majorfield.}
 }
 
 \def\pgcompfrontpage{%
+	\if@openright\cleardoublepage\else\clearpage\fi
+  \thispagestyle{empty}
+  \begin{center}
+  \includegraphics[width=2cm]{ufba}\\
+  \sf\large
+  \@university
+  \if\@showinstitute1\\\@institute\fi
+  \vskip 25mm
+  \@program
+  \vskip 45mm
+  \begin{minipage}{110mm}
+    \begin{center}
+      \textbf{\MakeTextUppercase{\@title}}
+      \vskip\baselineskip
+      \@author
+      \vskip\baselineskip
+      \MakeTextUppercase{\@texttype}
+    \end{center}
+  \end{minipage}\\
+  \vfill
+  \@address\\
+  \@date
+  \end{center}
+}
+
+
+\def\pgcompfrontpagebsc{%
 	\if@openright\cleardoublepage\else\clearpage\fi
   \thispagestyle{empty}
   \begin{center}

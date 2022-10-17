@@ -94,13 +94,13 @@ line/.style={-latex}
 \address{Salvador}
 
 % Instituto ou Centro Academico
-\institute{Instituto de Matem\'{a}tica e Estatística}
+\institute{Instituto de Computa\c{c}\~{a}o}
 
 % Nome da biblioteca - usado na ficha catalografica
-\library{Biblioteca Reitor Mac\^{e}do Costa} %TODO: is this correct?
+\library{Biblioteca Reitor Mac\^{e}do Costa}
 
-% Programa de pos-graduacao %TODO: is this correct?
-\program{Programa de Graduação em Ciência da Computação}
+% Colegiado de graduacao
+\program{Bacharelado em Ci\^{e}ncia da Computa\c{c}\~{a}o}
 
 % Area de titulacao
 \majorfield{Ci\^{e}ncia da Computa\c{c}\~{a}o}
@@ -126,18 +126,19 @@ line/.style={-latex}
 % Orientador(a)
 % Opcao: [f] - para orientador do sexo feminino
 % e.g. \coadviser{Prof. Dr. Pedro Pedreira}
+\coadviser{Vinicius Tavares Petrucci}
 % Comente se nao ha co-orientador
 %\coadviser{Nome Completo do CO-ORIENTADOR}
 
 %% Inicio do documento
 \begin{document}
 
-\pgcompfrontpage
+\pgcompfrontpagebsc
 
 %% Parte pre-textual
 \frontmatter
 
-\presentationpage
+\pgcomppresentationpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
 % Ficha catalografica
@@ -175,9 +176,13 @@ line/.style={-latex}
 % Agradecimentos
 % Se preferir, crie um arquivo `a parte e o inclua via \include{}
 \acknowledgements
-%TODO: write acknowledgements
 % REMEMBER ABOUT Chameleon
 TODO
+
+% Epigrafe
+%\begin{epigraph}[NOTA]{AUTOR}
+%
+%\end{epigraph}
 
 %%%%%%%%%%%%%%%%%%%%%
 % Resumo em Portugues
@@ -189,7 +194,6 @@ TODO
 % Some keywords:
 % Instrumentation
 
-% TODO
 \begin{keywords}
 TODO
 \end{keywords}
@@ -217,7 +221,7 @@ TODO
 
 % Lista de tabelas
 % Comente para ocultar
-\listoftables
+%\listoftables
 
 %
 \lstlistoflistings
@@ -252,8 +256,8 @@ TODO
 
 % Apendices
 % Comente se naoo houver apendices
-%\iffalse
-%\appendix
+\appendix
+\input{src/api}
 
 %\xchapter{Exemplo de Apêndice}{} %sem preambulo
 %\lipsum
