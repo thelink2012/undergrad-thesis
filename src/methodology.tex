@@ -69,7 +69,7 @@ JVMTIPROF can notify clients about method calls of interest. This is achieved by
 Agents set the target methods through \apiref{SetMethodEventFlag}. When the bytecode of the class associated with the method is loaded, it is instrumented to include JVMTIPROF's internal calls. Class loading is intercepted through JVMTI's  \apijvmtiref{ClassFileLoadHook} event. If the class is already loaded, the instrumentation is forced by calling JVMTI's \apijvmtiref{RetransformClasses} on the said class.
 
 \medskip
-\begin{lstlisting}[language=Java,frame=tb,escapechar=@,captionpos=b,caption=Example instrumentation applied by method interception. Instrumented code is in green. The \code{sum} method is modified such that JVMTIPROF is notified about entries and exits on it.,label=lst:method_interception_instrumentation]
+\begin{lstlisting}[language=Java,frame=tb,escapechar=@,captionpos=b,caption=Example instrumentation applied by method interception. Instrumented code is in gray. The \code{sum} method is modified such that JVMTIPROF is notified about entries and exits on it.,label=lst:method_interception_instrumentation]
 @\color{patchadd}public class JVMTIPROF \{@
     @\color{patchadd}public static native void onMethodEntry(long hookPtr);@
     @\color{patchadd}public static native void onMethodExit(long hookPtr);@

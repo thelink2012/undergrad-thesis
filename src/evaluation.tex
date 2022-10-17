@@ -25,7 +25,7 @@ Hurryup works by instrumenting Elasticsearch's hot functions to produce enter an
 
 \begin{figure}[hb]
 \centering
-\includegraphics[width=1.0\textwidth]{src/figure/ondem_vs_hup.png}
+\includegraphics[width=1.0\textwidth]{src/figure/ondem_vs_hup.mono.png}
 \caption{An experiment comparing Linux's Ondemand governor against Hurryup's frequency scaling scheme. The left plot presents Elasticsearch's service time, and the right plot the energy consumption of the CPU while executing search requests. Results are shown for both a low and high server load.}
 \label{fig:ondem_vs_hup}
 \end{figure}
@@ -36,7 +36,7 @@ We modify Hurryup to use JVMTIPROF's instrumentation methods and re-execute the 
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=1.0\textwidth]{src/figure/ondem_vs_hup_vs_newhup.png}
+\includegraphics[width=1.0\textwidth]{src/figure/ondem_vs_hup_vs_newhup.mono.png}
 \caption{An experiment comparing Hurryup's performance when implemented with JVMTIPROF versus the baseline. The left plot presents Elasticsearch's service time, and the right plot the energy consumption of the CPU while executing search requests. Results are shown for both a low and high server load.}
 \label{fig:ondem_vs_hup_vs_newhup}
 \end{figure}
@@ -47,7 +47,7 @@ We also compare the overhead of instrumenting Elasticsearch's hot functions, exc
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=1.0\textwidth]{src/figure/overhead.png}
+\includegraphics[width=1.0\textwidth]{src/figure/overhead.mono.png}
 \caption{An experiment comparing the performance of Elasticsearch when their hot functions are kept as-is or hooked with JVMTI and JVMTIPROF. The left plot presents Elasticsearch's service time, and the right plot the energy consumption of the CPU while executing search requests. Results are shown for both a low and high server load.}
 \label{fig:overhead}
 \end{figure}
