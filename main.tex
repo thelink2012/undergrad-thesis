@@ -41,6 +41,7 @@
 \usepackage[printonlyused, withpage]{acronym}
 
 % Custom preamble
+\usepackage{appendix}
 \usepackage[T1]{fontenc} % https://tex.stackexchange.com/q/150767
 \usepackage{enumitem} % for itemize spacing options
 \usepackage{tikz}
@@ -255,9 +256,10 @@ TODO
 \bibliography{src/biblio}
 
 % Apendices
-% Comente se naoo houver apendices
-\appendix
+\begin{appendices}
+\renewcommand{\chaptername}{Appendix} % HACK
 \input{src/api}
+\end{appendices}
 
 %\xchapter{Exemplo de Apêndice}{} %sem preambulo
 %\lipsum
