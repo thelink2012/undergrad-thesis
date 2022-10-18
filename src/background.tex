@@ -1,6 +1,8 @@
 \xchapter{Background}{}
 \label{cap:background}
 
+% OBSERVER EFFECT ON PROFILING
+
 This chapter introduces the background knowledge necessary to understand this work. We first introduce concepts of profiling and instrumentation, then dive into some aspects of the Java Virtual Machine (JVM for short), and finally present a search engine that runs on top of the JVM. We also introduce some concepts related to Linux power governors.
 
 \section{Instrumentation}
@@ -52,6 +54,8 @@ The Java Virtual Machine features automatic memory management through garbage co
 
 \subsection{Java Native Interface}
 
+% RELATED WORK: Project PANAMA
+
 The \emph{Java Native Interface (JNI)} is an application programming interface (API) that allows JVM bytecode to interoperate with native machine code. This library can invoke functions written in AOT-compiled programming languages such as C++ from within a Java program.
 
 Native methods are declared in the Java program, and during class loading, the JVM binds that method to a native symbol of a dynamic link library. Listings~\ref{lst:jni_example_java} and \ref{lst:jni_example_cpp} presents an example of this interaction.
@@ -99,28 +103,25 @@ A JVMTI environment can be disposed explicitly by calling \apijvmtiref{DisposeEn
 
 \subsection{Safepoints}
 
-A \emph{safepoint} is a point of execution in which all root object references are known, and heap object contents are consistent. The most popular JVM implementations use safepoints to assist in implementing operations such as garbage collection, thread dumps, and compiler deoptimization.
+A \emph{safepoint} is a point of execution in which all root object references are known, and heap object contents are consistent~\cite{hotspotglossary}. The most popular JVM implementations use safepoints to assist in implementing operations such as garbage collection, thread dumps, and compiler deoptimization~\cite{lin2015yieldpoint}.
 
-A thread is in a safepoint while performing I/O, in between two interpreted bytecode instructions, when running native code, when contended or waiting in a lock, and at specific points of JIT-compiled code.
+A thread is in a safepoint while performing I/O, in between two interpreted bytecode instructions, when running native code, when contended or waiting in a lock, and at specific points of JIT-compiled code~\cite{wakart2015safepoints}.
 
 \subsubsection*{Safepoint Polls}
 
-JIT-compiled code can only know the root of object references through compiler-generated structures known as GC maps. These maps contain which machine registers and locations of the stack frame the objects are stored. Generating these maps for every instruction would require large amounts of memory and therefore is infeasible. Moreover, object references may be inconsistent across particular instructions. As an alternative, these maps are created only for specific locations known as \emph{safepoint polls}. Safepoint polls are generated at non-inlined method entry/exits and non-counted loop backedges.
+JIT-compiled code can only know the root of object references through compiler-generated structures known as GC maps. These maps contain which machine registers and locations of the stack frame the objects are stored. Generating these maps for every instruction would require large amounts of memory and therefore is infeasible. Moreover, object references may be inconsistent across particular instructions. As an alternative, these maps are created only for specific locations known as \emph{safepoint polls}. Safepoint polls are generated at non-inlined method entry/exits and non-counted loop backedges~\cite{hohenseehotspot}.
 
 Whenever the JVM needs to perform an operation that requires a safepoint (e.g., garbage collection), it must bring all threads to a safepoint. It does so by posting a safepoint request. Each executing thread checks the request at the next safepoint poll and pauses its execution. The time needed to bring a set of threads to a safepoint is known as \emph{time to safepoint}. Once all threads are blocked, the VM performs its operation and resumes the interrupted threads when finished.
 
 \subsubsection*{Safepoint Bias}
 
-JVMTI provides \apijvmtiref{GetCallStackTrace}, \apijvmtiref{GetThreadListStackTrace} and \apijvmtiref{GetAllStackTraces} functions. These functions can be used to get information on the call stack of threads. These operations require threads to be in a safepoint. Several Java profilers are built around these functions, resulting in profiles with \emph{safepoint bias}. These profilers are biased towards the location of the next safepoint poll, resulting in, for example, profiles not showing functions that do not have polls, despite their high CPU usage. These profilers also introduce additional overhead associated with time to safepoint.
+JVMTI provides \apijvmtiref{GetCallStackTrace}, \apijvmtiref{GetThreadListStackTrace} and \apijvmtiref{GetAllStackTraces} functions. These functions can be used to get information on the call stack of threads. These operations require threads to be in a safepoint. Several Java profilers are built around these functions, resulting in profiles with \emph{safepoint bias}~\cite{mytkowicz2010evaluating}. These profilers are biased towards the location of the next safepoint poll, resulting in, for example, profiles not showing functions that do not have polls, despite their high CPU usage. These profilers also introduce additional overhead associated with time to safepoint~\cite{wakart2016terrible}.
 
-% TODO GetCallStackTrace and others cannot be used in async signal context
-
-% TODO RELATED WORK WITH ASGCT
-
+Open-source profilers that mitigate the safepoint bias exists~\cite{nisbet2019profiling}. \code{perf-map-agent}~\cite{perfmapagent} is capable of profiling kernel, native, and JIT-generated code by producing JIT stack maps for Linux's \code{perf} tool. However, it cannot profile interpreted code. \code{honest-profiler}~\cite{honestprofiler} uses the \code{AsyncGetCallTrace} undocumented API to circumvent JVMTI's safepoint strategy. It can trace interpreted code but not kernel and native code. \code{async-profiler}~\cite{asyncprofiler} is a hybrid of both approaches and is capable of sampling native, kernel, interpreted, and JIT-compiled code.
 
 \section{Elasticsearch}
 
-\emph{Elasticsearch} is an open-source search engine built atop Apache Lucene, a Java library that executes indexing and querying/scoring functions. Like Lucene, Elasticsearch is written in Java and is mainly responsible for serving the search results through an HTTP interface while allowing Lucene to scale among clusters.
+\emph{Elasticsearch} is an open-source search engine built atop Apache Lucene~\cite{bialecki2012lucene}, a Java library that executes indexing and querying/scoring functions. Like Lucene, Elasticsearch is written in Java and is mainly responsible for serving the search results through an HTTP interface while allowing Lucene to scale among clusters.
 
 As a distributed application, multiple nodes or machines comprise an Elastichsearch cluster. This cluster handles all the non-Lucene tasks, such as creating and replicating shards, query distribution, and maintenance. Each node contains one or more shards, where each holds a search index.
 
@@ -128,28 +129,14 @@ As a distributed application, multiple nodes or machines comprise an Elastichsea
 
 \emph{Dynamic Frequency Scaling (DFS)} is a technique for improving power efficiency on modern multi-core systems. The operating frequency of a particular core increases or decreases according to the application's demand. Given that power consumption is linearly proportional to core frequency, a lower frequency results in less power consumption.
 
-Linux implements DFS in its Ondemand governor, which attempts to minimize energy consumption by changing the CPU speed according to processor utilization thresholds. The Ondemand governor has been Linux's default since kernel 3.4.
+Linux implements DFS in its Ondemand governor~\cite{pallipadi2006ondemand}, which attempts to minimize energy consumption by changing the CPU speed according to processor utilization thresholds. The Ondemand governor has been Linux's default since kernel 3.4.
 
 The kernel also provides a userspace governor, in which the user chooses a fixed frequency. 
 
-
-% TODO
-% VOCABULARY:
-% end-programmer (actually API client)
-
 \iffalse
-%\section{Related Work}
-
-TODO
-
-% TODO maybe the "JVM does provide an API..." paragraph in the last section goes in the Related Work section.
-
 %% Scheduling
 % Compiler-assisted Adaptive Program Scheduling in big.LITTLE Systems
 % Hipster: Hybrid Task Manager for Latency-Critical Cloud Workloads
-
-
-%% TODO profilers and java profilers
 
 %% Profilers with user-customized code
 % + An Efficient and Generic Event-based Profiler Framework for Dynamic Languages
@@ -161,18 +148,13 @@ TODO
 % + Exploiting  Hardware  Performance  Counters  with  Flow  and  Context  Sensitive  Profiling 
 % A Portable Sampling-Based  Profiler for Java Virtual Machines
 
-%% Async
-% https://dl.acm.org/doi/pdf/10.1145/2568088.2576759
 
 % Related:
 % Sampling Profiler API for sw/hw counters (remember openmp stuff?)
 
-% Async Profiler
 % Coz
 % Free-Lunch
 % JNIF
 % ASM
 % SOOT
-
-% PAPER Profiling and Tracing Support for Java Applications
 \fi
