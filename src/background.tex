@@ -1,33 +1,29 @@
 \xchapter{Background}{}
 \label{cap:background}
 
-% OBSERVER EFFECT ON PROFILING
-
 This chapter introduces the background knowledge necessary to understand this work. We first introduce concepts of profiling and instrumentation, then dive into some aspects of the Java Virtual Machine (JVM for short), and finally present a search engine that runs on top of the JVM. We also introduce some concepts related to Linux power governors.
 
 \section{Instrumentation}
 
-\emph{Software instrumentation} is a technique that adds auxiliary code to an existing computer program. Instrumentation can be performed either statically (i.e., at compile-time) or dynamically (i.e., at runtime). Static instrumentation is accomplished by modifying the source code or rewriting the application target binary, and dynamic instrumentation is performed after the binary is in-memory.
+\emph{Software instrumentation} is a technique that adds auxiliary code to an existing computer program. Instrumentation can be performed either statically (i.e., at compile-time) or dynamically (i.e., at runtime). Static instrumentation is accomplished by modifying the source code or rewriting the application target binary, and dynamic instrumentation is performed after the binary is in-memory \cite{kempf2007instrumentation}.
 
-\emph{Function hooking} is an instrumentation technique by which function calls are intercepted to perform additional operations before or after the function is invoked.
+\emph{Function hooking} is an instrumentation technique by which function calls are intercepted to perform additional operations before or after the function is invoked \cite{lopez2017survey}.
 
-Instrumentation has many applications, such as in profiling, debugging, program analysis, code coverage, and just-in-time compilation. For example, a profiler might hook every function of an application to measure and report its execution time.
-
-% CITE https://onlinelibrary.wiley.com/doi/abs/10.1002/9780470050118.ecse386
+Instrumentation has many applications, such as in profiling, debugging, program analysis, code coverage, and just-in-time compilation \cite{graham1982gprof,zhao2008debug,seward2005memcheck,ivankovic2019googlecov,openjdktier}. For example, a profiler might hook every function of an application to measure and report its execution time.
 
 \section{Profiling}
 
-\emph{Software profiling} is a form of dynamic program analysis used to measure the performance characteristics of a computer program. A profiler can estimate a range of metrics, such as execution time, memory usage, and energy consumption.
+\emph{Software profiling} is a form of dynamic program analysis used to measure the performance characteristics of a computer program. A profiler can estimate a range of metrics, such as execution time, memory usage, and energy consumption \cite{graham1982gprof,reiss2009visualizing,pathak2012energy}.
 
-Profilers are typically used to identify hot paths (i.e., code blocks where most of the application's time is spent). Once identified, these hot paths can be improved, either manually (i.e., by a programmer) or automatically (i.e., through an algorithm). An optimizing compiler, for example, might use a profile to make more informed decisions or optimize certain functions more aggressively.
+Profilers are typically used to identify code blocks where most of the application's time is spent. Once identified, these hot paths can be improved, either manually (i.e., by a programmer) or automatically (i.e., through an algorithm). An optimizing compiler, for example, might use a profile to make more informed decisions or optimize certain functions more aggressively \cite{pettis1990guided}.
 
-Profilers can be classified as sampling profilers, in which threads are interrupted once in a while to take samples of its execution, and instrumenting profilers, where the program's code is modified at critical locations to include the reporting of statistics. Sampling profilers typically produce much lower runtime overhead than the instrumented counterpart.
+CPU profilers can be classified as sampling profilers, in which threads are interrupted once in a while to take samples of its execution, and instrumenting profilers, where the program's code is modified at critical locations to include the reporting of statistics. Sampling profilers typically produce much lower runtime overhead than the instrumented counterpart \cite{moseley2007shadow}.
 
 \subsection{Sampling in Unix-like Systems}
 
 Sampling profilers need to sample the call stack of a thread every few milliseconds. A common way to achieve this on Unix-like systems is to have an application-wide timer that notifies its expiration through a signal. The \code{SIGPROF} signal and \code{ITIMER_PROF} timer are typically used for this purpose. Once the signal is received, the call stack is sampled by walking on the stack of the running thread.
 
-The code executed in the signal handler must be carefully crafted to be \emph{async-signal-safe}. Async-signal-safe operations are guaranteed not to interfere with operations in the interrupted thread. For example, signals may produce deadlocks if they try to hold the same locks as the interrupted thread. As such, async-signal-safe code is limited to primitive memory operations and a subset of system calls. Given this limitation, profiling signal handlers typically publish the acquired samples to a separate worker thread through an async-signal-safe data structure.
+The code executed in the signal handler must be carefully crafted to be \emph{async-signal-safe} \cite{signalsafety}. Async-signal-safe operations are guaranteed not to interfere with operations in the interrupted thread. For example, signals may produce deadlocks if they try to hold the same locks as the interrupted thread. As such, async-signal-safe code is limited to primitive memory operations and a subset of system calls. Given this limitation, profiling signal handlers typically publish the acquired samples to a separate worker thread through an async-signal-safe data structure.
 
 
 \section{Java Virtual Machine}
@@ -40,13 +36,11 @@ The \emph{Java Virtual Machine} is an abstract computing machine. Its primary pu
 
 A program targeting the JVM compiles into a set of class files. A \textit{class file} is a binary format containing JVM instructions (or \emph{bytecode}), symbol tables, and other ancillary information. Class files are loaded, linked, and initialized by the JVM's \emph{class loader}.
 
-The JVM executes classes once they are loaded. Most software implementations employ a just-in-time compiler \cite{kotzmann2008design}. Bytecode compiles into the host machine instruction set as it gets interpreted. The compiled code can execute with performance characteristics comparable to programming languages AOT-compiled to machine code \cite{gherardi2012java,taboada2013java}.
+The JVM executes classes once they are loaded. Most software implementations employ a just-in-time compiler \cite{kotzmann2008design}\nocite{paleczny2001java}. Bytecode compiles into the host machine instruction set as it gets interpreted. The compiled code can execute with performance characteristics comparable to programming languages AOT-compiled to machine code \cite{gherardi2012java,taboada2013java}.
 
 Just-in-time compilers may employ profile-guided optimizations. Oracle's HotSpot, for example, performs tiered compilation \cite{java7tier}. It has four levels of compilation which optimizes and deoptimizes functions between levels as the application profile evolves. HotSpot's JIT constructs profiles through instrumentation of method invocations and loop backedges \cite{openjdktier}.
 
 The Java Virtual Machine features automatic memory management through garbage collection \cite{pufek2019gc}. An unreachable instance of an object is automatically classified as garbage and freed from memory.
-
-% CITE https://file.dev-union.cn/txt/jvm-editions/JVM17%20%E8%A7%84%E8%8C%83.pdf
 
 \subsection{Java Native Interface}
 
@@ -146,9 +140,15 @@ The kernel also provides a userspace governor, in which the user chooses a fixed
 % Related:
 % Sampling Profiler API for sw/hw counters (remember openmp stuff?)
 
+% PAPI
+
 % Coz
 % Free-Lunch
 % JNIF
 % ASM
 % SOOT
+
+%%
+% A Survey on Function and System Call Hooking Approaches
+% Valgrind, Pin, Dynamo, DynamoRIO
 \fi

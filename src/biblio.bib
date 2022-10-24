@@ -1,3 +1,124 @@
+%% Profiling
+@article{ponder1988inaccuracies,
+  title={Inaccuracies in program profilers},
+  author={Ponder, Carl and Fateman, Richard J},
+  journal={Software: Practice and Experience},
+  volume={18},
+  number={5},
+  pages={459--467},
+  year={1988},
+  publisher={Wiley Online Library}
+}
+@inproceedings{srivastava1994atom,
+  title={ATOM: A system for building customized program analysis tools},
+  author={Srivastava, Amitabh and Eustace, Alan},
+  booktitle={Proceedings of the ACM SIGPLAN 1994 conference on Programming language design and implementation},
+  pages={196--205},
+  year={1994}
+}
+@article{nethercote2007valgrind,
+  title={Valgrind: a framework for heavyweight dynamic binary instrumentation},
+  author={Nethercote, Nicholas and Seward, Julian},
+  journal={ACM Sigplan notices},
+  volume={42},
+  number={6},
+  pages={89--100},
+  year={2007},
+  publisher={ACM New York, NY, USA}
+}
+@inproceedings{pettis1990guided,
+  title={Profile guided code positioning},
+  author={Pettis, Karl and Hansen, Robert C},
+  booktitle={Proceedings of the ACM SIGPLAN 1990 conference on Programming language design and implementation},
+  pages={16--27},
+  year={1990}
+}
+@inproceedings{reiss2009visualizing,
+  title={Visualizing the Java heap to detect memory problems},
+  author={Reiss, Steven P},
+  booktitle={2009 5th IEEE International Workshop on Visualizing Software for Understanding and Analysis},
+  pages={73--80},
+  year={2009},
+  organization={IEEE}
+}
+@inproceedings{pathak2012energy,
+  title={Where is the energy spent inside my app? Fine Grained Energy Accounting on Smartphones with Eprof},
+  author={Pathak, Abhinav and Hu, Y Charlie and Zhang, Ming},
+  booktitle={Proceedings of the 7th ACM european conference on Computer Systems},
+  pages={29--42},
+  year={2012}
+}
+@inproceedings{moseley2007shadow,
+  title={Shadow profiling: Hiding instrumentation costs with parallelism},
+  author={Moseley, Tipp and Shye, Alex and Reddi, Vijay Janapa and Grunwald, Dirk and Peri, Ramesh},
+  booktitle={International Symposium on Code Generation and Optimization (CGO'07)},
+  pages={198--208},
+  year={2007},
+  organization={IEEE}
+}
+@manual{signalsafety,
+ title      = {signal-safety(7) Linux manual page},
+ author     = {Kerrisk, Michael},
+ year       = {2016},
+ url        = {https://man7.org/linux/man-pages/man7/signal-safety.7.html}
+}
+%% Instrumentation
+@article{kempf2007instrumentation,
+  author = {Kempf, Torsten and Karuri, Kingshuk and Gao, Lei},
+  publisher = {John Wiley \& Sons, Ltd},
+  isbn = {9780470050118},
+  title = {Software Instrumentation},
+  booktitle = {Wiley Encyclopedia of Computer Science and Engineering},
+  chapter = {},
+  pages = {1-11},
+  doi = {https://doi.org/10.1002/9780470050118.ecse386},
+  url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/9780470050118.ecse386},
+  eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/9780470050118.ecse386},
+  year = {2008},
+  keywords = {software instrumentation, DBI, executable editor, bytecode, virtual machine}
+}
+@article{lopez2017survey,
+  title={A survey on function and system call hooking approaches},
+  author={Lopez, Juan and Babun, Leonardo and Aksu, Hidayet and Uluagac, A Selcuk},
+  journal={Journal of Hardware and Systems Security},
+  volume={1},
+  number={2},
+  pages={114--136},
+  year={2017},
+  publisher={Springer}
+}
+@article{graham1982gprof,
+  title={Gprof: A call graph execution profiler},
+  author={Graham, Susan L and Kessler, Peter B and McKusick, Marshall K},
+  journal={ACM Sigplan Notices},
+  volume={17},
+  number={6},
+  pages={120--126},
+  year={1982},
+  publisher={ACM New York, NY, USA}
+}
+@inproceedings{zhao2008debug,
+  title={How to do a million watchpoints: Efficient debugging using dynamic instrumentation},
+  author={Zhao, Qin and Rabbah, Rodric and Amarasinghe, Saman and Rudolph, Larry and Wong, Weng-Fai},
+  booktitle={International Conference on Compiler Construction},
+  pages={147--162},
+  year={2008},
+  organization={Springer}
+}
+@inproceedings{seward2005memcheck,
+  title={Using Valgrind to Detect Undefined Value Errors with Bit-Precision.},
+  author={Seward, Julian and Nethercote, Nicholas},
+  booktitle={USENIX Annual Technical Conference, General Track},
+  pages={17--30},
+  year={2005}
+}
+@inproceedings{ivankovic2019googlecov,
+  title={Code coverage at Google},
+  author={Ivankovi{\'c}, Marko and Petrovi{\'c}, Goran and Just, Ren{\'e} and Fraser, Gordon},
+  booktitle={Proceedings of the 2019 27th ACM Joint Meeting on European Software Engineering Conference and Symposium on the Foundations of Software Engineering},
+  pages={955--963},
+  year={2019}
+}
 %% Java Virtual Machine
 @book{jvmspec,
   author = {Lindholm, Tim and Yellin, Frank and Bracha, Gilad and Buckley, Alex and Smith, Daniel},
@@ -167,6 +288,7 @@
 }
 @inproceedings{mytkowicz2010evaluating,
   author = {Mytkowicz, Todd and Diwan, Amer and Hauswirth, Matthias and Sweeney, Peter F.},
+  title = {Evaluating the Accuracy of Java Profilers},
   year = {2010},
   isbn = {9781450300193},
   publisher = {Association for Computing Machinery},
@@ -176,7 +298,7 @@
   booktitle = {Proceedings of the 31st ACM SIGPLAN Conference on Programming Language Design and Implementation},
   pages = {187–197},
   numpages = {11},
-  keywords = {observer effect, profiling, bias},
+  keywords = {profiling, observer effect, bias},
   location = {Toronto, Ontario, Canada},
   series = {PLDI '10}
 }
