@@ -9,7 +9,6 @@ pdf: $(TARGET).pdf
 $(TARGET): $(TARGET).pdf
 
 $(TARGET).pdf: $(TARGET).tex \
-               $(TARGET).bib \
                src/*.tex \
                src/*.bib \
                src/listing/* \
