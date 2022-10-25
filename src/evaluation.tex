@@ -5,7 +5,7 @@ In this chapter, we evaluate JVMTIPROF by using it to instrument Elasticsearch. 
 
 \section{Experimental Setup}
 
-We conduct experiments on a bare-metal server instance provided by the Chameleon Cloud service. The server consists of an Intel Xeon Gold 6126 (Skylake architecture) with 196GB of DRAM and a 220GB SSD disk. We run Ubuntu 20.04 (Linux kernel 5.4) and Elasticsearch version 6.5.4. For the search index database, we use the Wikipedia dump version \code{enwiki-latest-pages-articles} downloaded in September 2022.
+We conduct experiments on a bare-metal server instance provided by the Chameleon Cloud service. The server consists of an Intel Xeon Gold 6126 (Skylake architecture) with 196GB of DRAM and a 220GB SSD disk. We run Ubuntu 20.04 (Linux kernel 5.4) and Elasticsearch version 6.5.4 under OpenJDK 8u342. For the search index database, we use the Wikipedia dump version \code{enwiki-latest-pages-articles} downloaded in September 2022.
 
 The CPU has 24 physical cores equally divided between two sockets. Intel's Hyperthreading technology is turned off, so we only consider the physical core count. To isolate the network effects in the shared experimental platform, we configure socket 0 to run the server-side applications (Elasticsearch) and socket 1 to execute the load generator (FABAN).
 

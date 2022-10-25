@@ -112,9 +112,13 @@ line/.style={-latex}
 
 % Data da defesa
 % e.g. \date{19 de fevereiro de 2013}
-\date{DD de MMMM de YYYY} % TODO
-% e.g. \defenseyear{2013}
-\defenseyear{2022} % TODO
+% TODO
+\newcommand{\mes}{\ifcase\the\month\or 
+    Janeiro \or Fevereiro \or Março \or Abril \or Maio \or Junho \or 
+    Julho \or Agosto \or Setembro \or Outubro \or Novembro \or 
+    Dezembro \fi}
+\date{\the\day{} de \mes de \the\year{}}
+\defenseyear{2022}
 
 % Autor
 % e.g. \author{Jose da Silva}
@@ -128,7 +132,7 @@ line/.style={-latex}
 % Orientador(a)
 % Opcao: [f] - para orientador do sexo feminino
 % e.g. \coadviser{Prof. Dr. Pedro Pedreira}
-\coadviser{Vinicius Tavares Petrucci}
+%\coadviser{Vinicius Tavares Petrucci}
 % Comente se nao ha co-orientador
 %\coadviser{Nome Completo do CO-ORIENTADOR}
 
@@ -148,7 +152,7 @@ line/.style={-latex}
 
 \authorcitationname{Amorim, Denilson das Merc\^{e}s} % e.g. Terceiro, Antonio Soares de Azevedo
 \advisercitationname{Januario, Tiago de Oliveira} % e.g. Chavez, Christina von Flach Garcia
-\coadvisercitationname{Petrucci, Vinicius Tavares} % e.g. Chavez, Christina von Flach Garcia
+%\coadvisercitationname{Petrucci, Vinicius Tavares} % e.g. Chavez, Christina von Flach Garcia
 %\coadvisercitationname{Sobrenome, Nome do CO-ORIENTADOR} % e.g. Mendonca, Manoel Gomes de
 \catalogtype{Monografia (Graduação)} % e.g. ``Tese (Doutorado)''
 
@@ -161,11 +165,10 @@ line/.style={-latex}
 % Termo de aprovacaoo
 %%%%%%%%%%%%%%%%%%%%%
 
-% TODO
-\approvalsheet{Salvador, DD de MMMM de YYYY}{
+\approvalsheet{Salvador, \the\day{} de \mes de \the\year{}}{
    \comittemember{Prof. Dr. Tiago de Oliveira Januario}{Universidade Federal da Bahia}
-   \comittemember{Prof. Dr. Professor 2}{Universidade Federal da Bahia}
-   \comittemember{Profa. Dra. Professora 3}{Universidade Federal da Bahia}
+   \comittemember{Prof. Dr. Vinicius Tavares Petrucci}{Universidade Federal da Bahia} % TODO university name
+   \comittemember{Ms. Diego Quadros}{Universidade Federal da Bahia} % TODO full name
    % Para mestrado, apenas 3.
    % \comittemember{Prof. Dr. Professor 4}{Universidade HJKL}
    % \comittemember{Profa. Dra. Professora 5}{Universidade QWERTY}

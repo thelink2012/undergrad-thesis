@@ -36,9 +36,9 @@ The \emph{Java Virtual Machine} is an abstract computing machine. Its primary pu
 
 A program targeting the JVM compiles into a set of class files. A \textit{class file} is a binary format containing JVM instructions (or \emph{bytecode}), symbol tables, and other ancillary information. Class files are loaded, linked, and initialized by the JVM's \emph{class loader}.
 
-The JVM executes classes once they are loaded. Most software implementations employ a just-in-time compiler \cite{kotzmann2008design}\nocite{paleczny2001java}. Bytecode compiles into the host machine instruction set as it gets interpreted. The compiled code can execute with performance characteristics comparable to programming languages AOT-compiled to machine code \cite{gherardi2012java,taboada2013java}.
+The JVM executes classes once they are loaded. Most software implementations employ a just-in-time compiler \cite{kotzmann2008design}\nocite{paleczny2001java}. Bytecode compiles into the host machine instruction set as it gets interpreted. The compiled code can execute with performance characteristics comparable to programming languages natively compiled to machine code \cite{gherardi2012java,taboada2013java}.
 
-Just-in-time compilers may employ profile-guided optimizations. Oracle's HotSpot, for example, performs tiered compilation \cite{java7tier}. It has four levels of compilation which optimizes and deoptimizes functions between levels as the application profile evolves. HotSpot's JIT constructs profiles through instrumentation of method invocations and loop backedges \cite{openjdktier}.
+Just-in-time compilers may employ profile-guided optimizations. Oracle's HotSpot, for example, performs tiered compilation \cite{java7tier}. It has four levels of compilation which optimizes and deoptimizes functions between levels as the application profile evolves. HotSpot's JIT constructs profiles through instrumentation of method invocations, and loop backedges \cite{openjdktier}.
 
 The Java Virtual Machine features automatic memory management through garbage collection \cite{pufek2019gc}. An unreachable instance of an object is automatically classified as garbage and freed from memory.
 
@@ -71,7 +71,7 @@ The JNI interface provides functionality to invoke Java methods, access object f
 
 \subsection{JVM Tool Interface}
 
-The \emph{JVM Tool Interface (JVMTI)} is a programming interface native agents can use to build development and monitoring tools for the JVM \cite{jvmti}. It provides ways to inspect states and react to events of the VM. Although a JVM implementation is not required to support the JVMTI, most software implementations do.
+The \emph{JVM Tool Interface (JVMTI)} is a programming interface that native agents can use to build development and monitoring tools for the JVM \cite{jvmti}. It provides ways to inspect states and react to events of the VM. Although a JVM implementation is not required to support the JVMTI, most software implementations do.
 
 JVMTI follows most of the approaches in JNI, such as using the same data types and exposing its API through a function table. JVMTI environments can be created by calling JNI's \href{https://docs.oracle.com/en/java/javase/11/docs/specs/jni/invocation.html#getenv}{\code{GetEnv}} function. A native agent is compiled into a dynamic link library and loaded into the VM through command line options. The agent's dynamic library should include the native symbols \code{Agent_OnLoad} and \code{Agent_OnUnload}. The VM invokes these functions during initialization and termination, respectively, to offer the agent an opportunity for setup and tear-down. An example agent is shown in Listing~\ref{lst:example_jvmti}.
 
@@ -85,7 +85,7 @@ In addition to capability setting, events of interest can be enabled (and disabl
 
 \subsubsection*{Environment Disposal}
 
-A JVMTI environment can be disposed explicitly by calling \apijvmtiref{DisposeEnvironment} or implicitly during agent unloading. During disposal, the environment capabilities are automatically relinquished and its events disabled. Memory and any other additional resources the agent allocates must be freed manually.
+A JVMTI environment can be disposed of explicitly by calling \apijvmtiref{DisposeEnvironment} or implicitly during agent unloading. During disposal, the environment capabilities are automatically relinquished and its events disabled. Memory and any other additional resources the agent allocates must be freed manually.
 
 \lstinputlisting[language=C++,frame=tb,float,floatplacement=b,caption={Example of a JVMTI agent that intercepts every Java method entry. Agent setup creates a JVMTI environment and requests the necessary capabilities from it. Then, the method entry event is enabled, and its callbacks are set. Error handling is omitted for brevity.},label=lst:example_jvmti]{src/listing/example-jvmti.cpp}.
 
@@ -97,7 +97,7 @@ A thread is in a safepoint while performing I/O, in between two interpreted byte
 
 \subsubsection*{Safepoint Polls}
 
-JIT-compiled code can only know the root of object references through compiler-generated structures known as GC maps. These maps contain which machine registers and locations of the stack frame the objects are stored. Generating these maps for every instruction would require large amounts of memory and therefore is infeasible. Moreover, object references may be inconsistent across particular instructions. As an alternative, these maps are created only for specific locations known as \emph{safepoint polls}. Safepoint polls are generated at non-inlined method entry/exits and non-counted loop backedges \cite{hohenseehotspot}.
+JIT-compiled code can only know the root of object references through compiler-generated structures known as \emph{GC maps}. These maps contain which machine registers and locations of the stack frame the objects are stored. Generating these maps for every instruction would require large amounts of memory and therefore is infeasible. Moreover, object references may be inconsistent across particular instructions. As an alternative, these maps are created only for specific locations known as \emph{safepoint polls}. Safepoint polls are generated at non-inlined method entry/exits, and non-counted loop backedges \cite{hohenseehotspot}.
 
 Whenever the JVM needs to perform an operation that requires a safepoint (e.g., garbage collection), it must bring all threads to a safepoint. It does so by posting a safepoint request. Each executing thread checks the request at the next safepoint poll and pauses its execution. The time needed to bring a set of threads to a safepoint is known as \emph{time to safepoint}. Once all threads are blocked, the VM performs its operation and resumes the interrupted threads when finished.
 
@@ -105,7 +105,7 @@ Whenever the JVM needs to perform an operation that requires a safepoint (e.g., 
 
 JVMTI provides \apijvmtiref{GetCallStackTrace}, \apijvmtiref{GetThreadListStackTrace} and \apijvmtiref{GetAllStackTraces} functions. These functions can be used to get information on the call stack of threads. These operations require threads to be in a safepoint. Several Java profilers are built around these functions, resulting in profiles with \emph{safepoint bias}~\cite{mytkowicz2010evaluating}. These profilers are biased towards the location of the next safepoint poll, resulting in, for example, profiles not showing functions that do not have polls, despite their high CPU usage \cite{wakart2016terrible}. These profilers also introduce additional overhead associated with time to safepoint.
 
-Open-source profilers that mitigate the safepoint bias exists \cite{nisbet2019profiling}. \code{perf-map-agent}~\cite{perfmapagent} is capable of profiling kernel, native, and JIT-generated code by producing JIT stack maps for Linux's \code{perf} tool. However, it cannot profile interpreted code. \code{honest-profiler}~\cite{honestprofiler} uses the \code{AsyncGetCallTrace} undocumented API to circumvent JVMTI's safepoint strategy. It can trace interpreted code but not kernel and native code. \code{async-profiler}~\cite{asyncprofiler} is a hybrid of both approaches and is capable of sampling native, kernel, interpreted, and JIT-compiled code.
+Open-source profilers that mitigate the safepoint bias exists \cite{nisbet2019profiling}. \code{perf-map-agent}~\cite{perfmapagent} is capable of profiling kernel, native, and JIT-generated code by producing JIT stack maps for Linux's \code{perf} tool. However, it cannot profile interpreted code. \code{honest-profiler}~\cite{honestprofiler} uses the \code{AsyncGetCallTrace} undocumented API to circumvent JVMTI's safepoint strategy. It can trace interpreted code but not kernel and native code. \code{async-profiler}~\cite{asyncprofiler} is a hybrid of both approaches and can sample native, kernel, interpreted, and JIT-compiled code.
 
 \section{Elasticsearch}
 
