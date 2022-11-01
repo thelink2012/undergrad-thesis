@@ -1,16 +1,8 @@
 \xchapter{Conclusion}{}
 \label{cap:conclusion}
 
-TODO
+This work presented the design and implementation of JVMTIPROF, an extension to JVMTI with higher-level functionalities. We evaluated the framework in an existing system and found no significant penalties compared to pure JVMTI.
 
-% FUTURE WORK: more complete Async call stack trace
-% FUTURE WORK: ASM interception
-% FUTURE WORK: Native method interception
-% FUTURE WORK: no need for patching JVMTI (more memory etc but simpler)
-% future work: per-thread sampling
-% future work: Windows support
-% FUTURE WORK: parameter interception
+We have also shown how JVMTI can be extended by manipulating its function table. In our experience, the technique is overly complex and hard to maintain, suggesting alternative solutions should be favored, such as the creation of a JVMTI environment private to the extended interface.
 
-% The Observer Effect of Profiling on Dynamic Java Optimizations
-
-% TODO can improve https://github.com/jvm-profiling-tools/async-profiler/blob/55da899511d6e427d87c85f6ef6b08ea6a0c1746/src/profiler.cpp#L343
+In the future, cross-platform support and additional functionalities can be explored. The present components have room for improvement as well. Call stack tracing does not expose kernel, and native functions, which can be solved by the hybrid approach of \citeonline{asyncprofiler}. Method interception may be more performant if we generate specialized code for each hook, avoiding the intermediate lookup by an integer identifiers. Finally, execution sampling may benefit from a per-thread timer instead of an application-wide one.
