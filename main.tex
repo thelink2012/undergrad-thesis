@@ -26,7 +26,7 @@
 
 % AtenÃ§Ã£o: Manter 'classic' na declaracao abaixo:
 \documentclass[bsc, en, classic, scr, a4paper]{ufbathesis}
-% FIXME I added scr manually, should it be kept as print?
+% TODO I added scr manually, should it be kept as print?
 
 %% Preambulo:
 \usepackage[utf8]{inputenc}
@@ -112,12 +112,7 @@ line/.style={-latex}
 
 % Data da defesa
 % e.g. \date{19 de fevereiro de 2013}
-% TODO
-\newcommand{\mes}{\ifcase\the\month\or 
-    Janeiro \or Fevereiro \or Março \or Abril \or Maio \or Junho \or 
-    Julho \or Agosto \or Setembro \or Outubro \or Novembro \or 
-    Dezembro \fi}
-\date{\the\day{} de \mes de \the\year{}}
+\date{25 de Novembro de 2022}
 \defenseyear{2022}
 
 % Autor
@@ -156,7 +151,7 @@ line/.style={-latex}
 %\coadvisercitationname{Sobrenome, Nome do CO-ORIENTADOR} % e.g. Mendonca, Manoel Gomes de
 \catalogtype{Monografia (Graduação)} % e.g. ``Tese (Doutorado)''
 
-\catalogtopics{TODO} % Listar palavras-chave do trabalho para a FICHA CATALOGRAFICA}, por exemplo, ``1. Complexidade Estrutural. 2. Qualidade de Software 3. Engenharia de Software''
+\catalogtopics{1. Java Virtual Machine. 2. Instrumentação de bytecode. 3. Interceptação de função. 4. Perfilamento de software. 5. Safe points} % Listar palavras-chave do trabalho para a FICHA CATALOGRAFICA}, por exemplo, ``1. Complexidade Estrutural. 2. Qualidade de Software 3. Engenharia de Software''
 \catalogcdd{XXX.XX} % e.g.  XXX.XX (nÃºmero nesse formato serah dado pela biblioteca)
 \catalogcdu{XXX.XX.XXX} % e.g.  XXX.XX.XXX (idem) 
 \catalogingsheet
@@ -165,9 +160,9 @@ line/.style={-latex}
 % Termo de aprovacaoo
 %%%%%%%%%%%%%%%%%%%%%
 
-\approvalsheet{Salvador, \the\day{} de \mes de \the\year{}}{
+\approvalsheet{Salvador, 25 de Novembro de 2022}{
    \comittemember{Prof. Dr. Tiago de Oliveira Januario}{Universidade Federal da Bahia}
-   \comittemember{Prof. Dr. Vinicius Tavares Petrucci}{Universidade Federal da Bahia} % TODO university name
+   \comittemember{Prof. Dr. Vinicius Tavares Petrucci}{Universidade Federal da Bahia}
    \comittemember{Ms. Diego Quadros}{Universidade Federal da Bahia} % TODO full name
    % Para mestrado, apenas 3.
    % \comittemember{Prof. Dr. Professor 4}{Universidade HJKL}
@@ -181,13 +176,12 @@ line/.style={-latex}
 % Agradecimentos
 % Se preferir, crie um arquivo `a parte e o inclua via \include{}
 \acknowledgements
-% REMEMBER ABOUT Chameleon
-TODO
+\input{src/acknowledgements}
 
 % Epigrafe
-%\begin{epigraph}[NOTA]{AUTOR}
-%
-%\end{epigraph}
+\begin{epigraph}[Tao Te Ching]{Lao Tzu}
+The journey of a thousand miles begins with one step.
+\end{epigraph}
 
 %%%%%%%%%%%%%%%%%%%%%
 % Resumo em Portugues
@@ -195,12 +189,12 @@ TODO
 
 \resumo
 \input{src/abstract-pt}
-
-% Some keywords:
-% Instrumentation
-
 \begin{keywords}
-TODO
+  Java Virtual Machine.
+  Instrumentação de bytecode.
+  Interceptação de função.
+  Perfilamento de software.
+  Safe points.
 \end{keywords}
 
 %%%%%%%%%%%%%%%%%%%
@@ -210,7 +204,11 @@ TODO
 \abstract
 \input{src/abstract-en}
 \begin{keywords}
-TODO
+  Java Virtual Machine.
+  Bytecode instrumentation.
+  Function interception.
+  Software profiling.
+  Safe points.
 \end{keywords}
 
 %%%%%%%%%%%%%%%%%%%
