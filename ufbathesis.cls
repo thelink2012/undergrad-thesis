@@ -419,7 +419,7 @@ grau de \@degree\ em \@majorfield.}
     \vspace{2em}
     \begin{flushright}
       \begin{minipage}{0.5\textwidth}
-        Esta\@texttype\ foi julgada adequada \`{a} obten\c{c}\~{a}o do t\'{i}tulo de\@degree\
+        Este\@texttype\ foi julgada adequada \`{a} obten\c{c}\~{a}o do t\'{i}tulo de\@degree\
         em \@majorfield\ e aprovada em sua forma final pelo \@program\ da \@university.
       \end{minipage}
     \end{flushright}
@@ -587,7 +587,7 @@ grau de \@degree\ em \@majorfield.}
   \vskip 45mm
   \begin{flushright}
     \begin{minipage}{0.5\textwidth}
-        Esta\@texttype\ foi apresentada ao \@program\ da \@university,
+        Este\@texttype\ foi apresentada ao \@program\ da \@university,
         como requisito parcial para obten\c{c}\~{a}o do grau de\@degree\
         em \@majorfield.
     \end{minipage}
