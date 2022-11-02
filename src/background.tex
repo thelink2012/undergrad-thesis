@@ -44,9 +44,9 @@ The Java Virtual Machine features automatic memory management through garbage co
 
 \subsection{Java Native Interface}
 
-The \emph{Java Native Interface (JNI)} is an application programming interface (API) that allows JVM bytecode to interoperate with native machine code \cite{jni}. This library can invoke functions written in AOT-compiled programming languages such as C++ from within a Java program.
+The \emph{Java Native Interface (JNI)} is an application programming interface (API) that allows JVM bytecode to interoperate with native machine code \cite{jni}. This library can invoke functions written in natively compiled programming languages such as C++ from within a Java program.
 
-Native methods are declared in the Java program, and during class loading, the JVM binds that method to a native symbol of a dynamic link library. Listings~\ref{lst:jni_example_java} and \ref{lst:jni_example_cpp} presents an example of this interaction.
+Native methods are declared in the Java program, and during class loading, the JVM binds that method to a symbol of a dynamic link library. Listings~\ref{lst:jni_example_java} and \ref{lst:jni_example_cpp} presents an example of this interaction.
 
 \begin{figure}[b]
 \par\noindent\begin{minipage}[t]{.45\textwidth}

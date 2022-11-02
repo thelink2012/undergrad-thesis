@@ -11,9 +11,9 @@ Profiling suffers from a compromise between precision and performance \cite{pond
 
 Profilers are typically standalone programs, reporting metrics and events about a target application. These profilers are tailored to a specific purpose and do not allow customization points.
 
-Tool-building systems are frequently used to construct program analyzers \cite{srivastava1994atom,nethercote2007valgrind}. These systems permit the installation of events on the target program, which can be acted upon by client-driven code. These systems can be used for several tasks, such as building profilers, schedulers, and patch snippets of existing programs.
+Tool-building systems are frequently used to construct program analyzers. These systems permit the installation of events on the target program, which can be acted upon by client-driven code. These systems can be used for several tasks, such as building profilers, schedulers, and patch snippets of existing programs.
 
-The Java Virtual Machine Tool Infrastructure (JVMTI) is an example of a tool-building system used by most existing Java profilers \cite{mytkowicz2010evaluating}. However, this infrastructure provides only bare-bones features, leaving it to the client to build high-level functionality. For example, to instrument the entry point of a selected method, the client needs to intercept the loading of compiled code and rebuild it by transforming its data structures.
+The Java Virtual Machine Tool Infrastructure (JVMTI) is an example of a tool-building system used by most existing Java profilers. However, this infrastructure provides only bare-bones features, leaving it to the client to build high-level functionality. For example, to instrument the entry point of a selected method, the client needs to intercept the loading of compiled code and rebuild it by transforming the related data structures.
 
 \section{Contribution}
 
