@@ -30,7 +30,7 @@ The code executed in the signal handler must be carefully crafted to be \emph{as
 
 The \emph{Java Virtual Machine} is an abstract computing machine. Its primary purpose is to execute code independently of the host hardware and operating system \cite{jvmspec}\nocite{venners1998inside}. This machine has an instruction set and a set of memory areas. There are several implementations of the JVM. Some are in hardware \cite{picojava}, but most are software-based \cite{hotspot, j9, zing}. Oracle's HotSpot is the most popular of these implementations.
 
-\emph{Java} is an object-oriented programming language that compiles to the JVM instruction set. Java found wide popularity in the software industry due to the characteristics of the Java Virtual Machine \cite{kumar2017survey}. Several other programming languages are capable of targeting the JVM, such as Scala, Clojure, JRuby, and Jython \cite{li2013hosted}.
+\emph{Java} is an object-oriented programming language that compiles to the JVM instruction set. Java found wide popularity in the software industry due to the characteristics of the Java Virtual Machine \cite{kumar2017survey}. Several other programming languages can target the JVM, such as Scala, Clojure, JRuby, and Jython \cite{li2013hosted}.
 
 \subsection{Execution Pipeline}
 
@@ -46,7 +46,7 @@ The Java Virtual Machine features automatic memory management through garbage co
 
 The \emph{Java Native Interface (JNI)} is an application programming interface (API) that allows JVM bytecode to interoperate with native machine code \cite{jni}. This library can invoke functions written in natively compiled programming languages such as C++ from within a Java program.
 
-Native methods are declared in the Java program, and during class loading, the JVM binds that method to a symbol of a dynamic link library. Listings~\ref{lst:jni_example_java} and \ref{lst:jni_example_cpp} presents an example of this interaction.
+Native methods are declared in the Java program, and during class loading, the JVM binds that method to a symbol of a dynamic link library. Listings~\ref{lst:jni_example_java} and \ref{lst:jni_example_cpp} present an example of this interaction.
 
 \begin{figure}[b]
 \par\noindent\begin{minipage}[t]{.45\textwidth}
@@ -137,7 +137,7 @@ The mentioned systems were built with native applications in mind and cannot man
 
 BCEL \cite{dahm1999bcel}, ASM \cite{bruneton2002asm}, Javassist \cite{chiba2003javassist} and SOOT \cite{vallee2010soot} are popular static instrumentation libraries for JVM bytecode. These tools and their augmentation routines are written in pure Java and can be used during dynamic instrumentation through events exposed by either JVMTI's agents or Java agents. The former uses native code and executes before the JVM bootstraps itself, while the latter is written in Java and, therefore, cannot instrument core runtime classes.
 
-FERRARI \cite{binder2007ferrari} is a instrumentation framework built as a hybrid of static and dynamic techniques. It statically instruments core classes while using a Java agent for the other ones. DiSL \cite{marek2012disl} achieves full dynamic instrumentation by using a separate JVM process for manipulating bytecode. It uses a JVMTI agent to intercept class loading and forward it to another bootstrapped VM.
+FERRARI \cite{binder2007ferrari} is an instrumentation framework built as a hybrid of static and dynamic techniques. It statically instruments core classes while using a Java agent for the other ones. DiSL \cite{marek2012disl} achieves full dynamic instrumentation by using a separate JVM process for manipulating bytecode. It uses a JVMTI agent to intercept class loading and forward it to another bootstrapped VM.
 
 JNIF \cite{mastrangelo2014jnif} was created to foster native alternatives. It is a static instrumentation library written in and for use by native code. JVMTIPROF uses JNIF and is, to our knowledge, the first fully native dynamic instrumentation framework for Java.
 
