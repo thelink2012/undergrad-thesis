@@ -26,7 +26,6 @@
 
 % AtenÃ§Ã£o: Manter 'classic' na declaracao abaixo:
 \documentclass[bsc, en, classic, scr, a4paper]{ufbathesis}
-% TODO I added scr manually, should it be kept as print?
 
 %% Preambulo:
 \usepackage[utf8]{inputenc}
@@ -54,7 +53,6 @@ line/.style={-latex}
 \lstset{
   basicstyle = \ttfamily,
   % https://tex.stackexchange.com/questions/69346/how-to-deal-with-very-long-lstinline-phrases-like-long-class-names
-  % TODO use this only for lstinline!
   literate={A}{A}{1\discretionary{}{}{}}
            {B}{B}{1\discretionary{}{}{}}
            {C}{C}{1\discretionary{}{}{}}
@@ -83,7 +81,6 @@ line/.style={-latex}
            {Z}{Z}{1\discretionary{}{}{}}
            {\_}{\_}{1\discretionary{}{}{}}
 }
-%\definecolor{patchadd}{rgb}{0.0, 0.65, 0.31}
 \definecolor{patchadd}{gray}{0.40}
 \setcounter{tocdepth}{2}
 \input{src/macros}

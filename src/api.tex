@@ -16,6 +16,7 @@ None of these functions is \jvmtihref{heapCallbacks}{heap callback safe}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{apidef}{Create}
+\label{api:jvmtiProf_Create}
 \begin{lstlisting}[language=C]
 jvmtiProfError jvmtiProf_Create(
             JavaVM* vm,
@@ -58,6 +59,7 @@ Functionalities of \code{jvmti_env} must not be used before invoking this functi
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{apidef}{Get Env}
+\label{api:jvmtiProf_GetEnv}
 \begin{lstlisting}[language=C]
 jvmtiProfError jvmtiProf_GetEnv(
             jvmtiEnv* jvmti_env,

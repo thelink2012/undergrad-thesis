@@ -1,19 +1,21 @@
 %%%%%%%%%%%% API Definition Macros %%%%%%%%%%%%
 
+\makeatletter
+\def\removespaces#1{\zap@space#1 \@empty}
+\makeatother
+
 \newcommand*{\code}{\lstinline[breaklines]}
-\newcommand{\apiref}[1]{\hyperref[api:#1]{\code{#1}}} % FIXME
+\newcommand{\apiref}[1]{\hyperref[api:#1]{\code{#1}}}
 \newcommand{\apihref}[2]{\hyperref[api:#1]{#2}}
-\newcommand{\apieventref}[1]{\code{#1}} % TODO
-\newcommand{\apicapref}[1]{\code{#1}} % TODO
+\newcommand{\apieventref}[1]{\apiref{#1}}
+\newcommand{\apicapref}[1]{\code{#1}}
 \newcommand{\apijvmtiref}[1]{\href{https://docs.oracle.com/en/java/javase/11/docs/specs/jvmti.html\##1}{\code{#1}}}
 \newcommand{\jvmtihref}[2]{\href{https://docs.oracle.com/en/java/javase/11/docs/specs/jvmti.html\##1}{#2}}
 \newcommand{\jnihref}[2]{\href{https://docs.oracle.com/en/java/javase/11/docs/specs/jni/functions.html\##1}{#2}}
 
 \newenvironment{apidef}[1]{
-   %\subsubsection*{\detokenize{#1}} \label{api:#1} *
-   % TODO fix underline with an additional space after it
-   \noindent \textbf{\detokenize{#1}} \label{api:#1}
-   % TODO must remove spaces in label about
+   \phantomsection
+   \noindent \textbf{\detokenize{#1}} \label{api:\removespaces{#1}}
    \bigskip
 
    \newenvironment{apidesc}{
