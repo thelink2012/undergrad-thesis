@@ -1,7 +1,7 @@
 %%%%%%%%%%%% API Definition Macros %%%%%%%%%%%%
 
 \newcommand*{\code}{\lstinline[breaklines]}
-\newcommand{\apiref}[1]{\hyperref[api:#1]{\code{#1}}}
+\newcommand{\apiref}[1]{\hyperref[api:#1]{\code{#1}}} % FIXME
 \newcommand{\apihref}[2]{\hyperref[api:#1]{#2}}
 \newcommand{\apieventref}[1]{\code{#1}} % TODO
 \newcommand{\apicapref}[1]{\code{#1}} % TODO
@@ -31,6 +31,14 @@
    \newcommand{\apiphaseany}{This function may be called during any phase.}
    \newcommand{\apiphaseonload}{This function may only be called during the OnLoad phase.}
    \newcommand{\apiphaseonloadlive}{This function may only be called during the OnLoad or the live phase.}
+   \newcommand{\apiphaselive}{This function may only be called during the live phase.}
+   \newcommand{\eventphaselive}{This event is sent only during the live phase.}
+
+   \newenvironment{eventtype}{
+      \noindent \textbf{EVENT TYPE} \par
+   }{
+      \par \bigbreak
+   }
 
    \newenvironment{apicap}{
       \noindent \textbf{CAPABILITIES} \par
@@ -48,13 +56,6 @@
    }
    \newcommand{\apiparamempty}{}
    \newcommand{\apiparamdef}[2]{\item[] \code{##1} ##2}
-
-   \newenvironment{apireturn}{
-      \noindent \textbf{RETURNS} \par
-   }{
-      \par \bigbreak
-   }
-   \newcommand{\apireturnempty}{}
 
    \newenvironment{apierror}{
       \noindent \textbf{ERROR CODES} \par
