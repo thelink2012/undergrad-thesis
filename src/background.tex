@@ -77,7 +77,7 @@ JVMTI follows most of the approaches in JNI, such as using the same data types a
 
 \subsubsection*{Capabilities}
 
-JVMTI provides several functions that can be invoked from most contexts, e.g., \apijvmtiref{GetCallStackTrace} and several events that can be used to react to the VM, e.g., \apijvmtiref{MethodEntry}. These functions and events may come at a cost in execution speed, start-up time, and memory footprint. For this reason, JVMTI does not provide any capability by default. During \code{Agent_OnLoad}, the agent must add (through JVMTI's \apijvmtiref{AddCapabilities}) the capabilities it needs (e.g. \apijvmtiref{can_generate_method_entry_events}).
+JVMTI provides several functions that can be invoked from most contexts, e.g., \apijvmtiref{GetStackTrace} and several events that can be used to react to the VM, e.g., \apijvmtiref{MethodEntry}. These functions and events may come at a cost in execution speed, start-up time, and memory footprint. For this reason, JVMTI does not provide any capability by default. During \code{Agent_OnLoad}, the agent must add (through JVMTI's \apijvmtiref{AddCapabilities}) the capabilities it needs (e.g. \apijvmtiref{can_generate_method_entry_events}).
 
 \subsubsection*{Events}
 
@@ -103,7 +103,7 @@ Whenever the JVM needs to perform an operation that requires a safepoint (e.g., 
 
 \subsubsection*{Safepoint Bias}
 
-JVMTI provides \apijvmtiref{GetCallStackTrace}, \apijvmtiref{GetThreadListStackTrace} and \apijvmtiref{GetAllStackTraces} functions. These functions can be used to get information on the call stack of threads. These operations require threads to be in a safepoint. Several Java profilers are built around these functions, resulting in profiles with \emph{safepoint bias} \cite{mytkowicz2010evaluating}. These profilers are biased towards the location of the next safepoint poll, resulting in, for example, profiles not showing functions that do not have polls, despite their high CPU usage \cite{wakart2016terrible}. These profilers also introduce additional overhead associated with time to safepoint.
+JVMTI provides \apijvmtiref{GetStackTrace}, \apijvmtiref{GetThreadListStackTrace} and \apijvmtiref{GetAllStackTraces} functions. These functions can be used to get information on the call stack of threads. These operations require threads to be in a safepoint. Several Java profilers are built around these functions, resulting in profiles with \emph{safepoint bias} \cite{mytkowicz2010evaluating}. These profilers are biased towards the location of the next safepoint poll, resulting in, for example, profiles not showing functions that do not have polls, despite their high CPU usage \cite{wakart2016terrible}. These profilers also introduce additional overhead associated with time to safepoint.
 
 Open-source profilers that mitigate the safepoint bias exists \cite{nisbet2019profiling}. \code{perf-map-agent} \cite{perfmapagent} is capable of profiling kernel, native, and JIT-generated code by producing JIT stack maps for Linux's \code{perf} tool. However, it cannot profile interpreted code. \code{honest-profiler} \cite{honestprofiler} uses the \code{AsyncGetCallTrace} undocumented API to circumvent JVMTI's safepoint strategy. It can trace interpreted code but not kernel and native code. \code{async-profiler} \cite{asyncprofiler} is a hybrid of both approaches and can sample native, kernel, interpreted, and JIT-compiled code.
 
