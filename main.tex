@@ -1,33 +1,9 @@
-%% Template para dissertacao/tese na classe UFBAthesis
-%% versao 1.0
-%% (c) 2005 Paulo G. S. Fonseca
-%% (c) 2012 Antonio Terceiro
-%% (c) 2014 Christina von Flach
-%% www.dcc.ufba.br/~flach/ufbathesis
-
-%% Carrega a classe ufbathesis
-%% Opcoes: * Idiomas
-%%           pt   - portugues (padrao)
-%%           en   - ingles
-%%         * Tipo do Texto
-%%           bsc  - para monografias de graduacao
-%%           msc  - para dissertacoes de mestrado (padrao)
-%%           qual - exame de qualificacao de mestrado
-%%           prop - exame de qualificacao de doutorado
-%%           phd  - para teses de doutorado
-%%         * Media
-%%           scr  - para versao eletronica (PDF) / consulte o guia do usuario
-%%         * Estilo
-%%           classic - estilo original a la TAOCP (deprecated) - apesar de deprecated, manter esse.
-%%           std     - novo estilo a la CUP (padrao)
-%%         * Paginacao
-%%           oneside - para impressao em face unica
-%%           twoside - para impressao em frente e verso (padrao)
-
-% AtenÃ§Ã£o: Manter 'classic' na declaracao abaixo:
 \documentclass[bsc, en, classic, scr, a4paper]{ufbathesis}
 
-%% Preambulo:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Preambulo da UFBA Thesis
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
 \usepackage{hyphenat}
@@ -39,7 +15,10 @@
 \usepackage{xfrac}
 \usepackage[printonlyused, withpage]{acronym}
 
-% Custom preamble
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Preambulo Customizado
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \usepackage{appendix}
 \usepackage[T1]{fontenc} % https://tex.stackexchange.com/q/150767
 \usepackage{enumitem} % for itemize spacing options
@@ -85,55 +64,30 @@ line/.style={-latex}
 \setcounter{tocdepth}{2}
 \input{src/macros}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Mais Preambulo
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Universidade
 \university{Universidade Federal da Bahia}
-
-% Endereco (cidade)
 \address{Salvador}
-
-% Instituto ou Centro Academico
 \institute{Instituto de Computa\c{c}\~{a}o}
-
-% Nome da biblioteca - usado na ficha catalografica
 \library{Biblioteca Reitor Mac\^{e}do Costa}
-
-% Colegiado de graduacao
 \program{Bacharelado em Ci\^{e}ncia da Computa\c{c}\~{a}o}
-
-% Area de titulacao
 \majorfield{Ci\^{e}ncia da Computa\c{c}\~{a}o}
 
-% Titulo da dissertacao
 \title{JVMTIPROF: An extension to the Java Virtual Machine Tool Infrastructure for building profiling agents}
 
-% Data da defesa
-% e.g. \date{19 de fevereiro de 2013}
 \date{25 de Novembro de 2022}
 \defenseyear{2022}
 
-% Autor
-% e.g. \author{Jose da Silva}
 \author{Denilson das Merc\^{e}s Amorim}
-
-% Orientador(a)
-% Opcao: [f] - para orientador do sexo feminino
-% e.g. \adviser[f]{Profa. Dra. Maria Santos}
 \adviser{Tiago de Oliveira Januario}
 
-% Orientador(a)
-% Opcao: [f] - para orientador do sexo feminino
-% e.g. \coadviser{Prof. Dr. Pedro Pedreira}
-%\coadviser{Vinicius Tavares Petrucci}
-% Comente se nao ha co-orientador
-%\coadviser{Nome Completo do CO-ORIENTADOR}
 
-%% Inicio do documento
 \begin{document}
 
 \pgcompfrontpagebsc
 
-%% Parte pre-textual
 \frontmatter
 
 \pgcomppresentationpage
@@ -142,40 +96,32 @@ line/.style={-latex}
 % Ficha catalografica
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
-\authorcitationname{Amorim, Denilson das Merc\^{e}s} % e.g. Terceiro, Antonio Soares de Azevedo
-\advisercitationname{Januario, Tiago de Oliveira} % e.g. Chavez, Christina von Flach Garcia
-%\coadvisercitationname{Petrucci, Vinicius Tavares} % e.g. Chavez, Christina von Flach Garcia
-%\coadvisercitationname{Sobrenome, Nome do CO-ORIENTADOR} % e.g. Mendonca, Manoel Gomes de
-\catalogtype{Monografia (Graduação)} % e.g. ``Tese (Doutorado)''
+\authorcitationname{Amorim, Denilson das Merc\^{e}s}
+\advisercitationname{Januario, Tiago de Oliveira}
+\catalogtype{Monografia (Graduação)}
 
-\catalogtopics{1. Java Virtual Machine. 2. Instrumentação de bytecode. 3. Interceptação de função. 4. Perfilamento de software. 5. Safe points} % Listar palavras-chave do trabalho para a FICHA CATALOGRAFICA}, por exemplo, ``1. Complexidade Estrutural. 2. Qualidade de Software 3. Engenharia de Software''
-\catalogcdd{XXX.XX} % e.g.  XXX.XX (nÃºmero nesse formato serah dado pela biblioteca)
+\catalogtopics{1. Java Virtual Machine. 2. Instrumentação de bytecode. 3. Interceptação de função. 4. Perfilamento de software. 5. Safe points}
+\catalogcdd{XXX.XX} % e.g.  XXX.XX (número nesse formato será dado pela biblioteca)
 \catalogcdu{XXX.XX.XXX} % e.g.  XXX.XX.XXX (idem) 
 \catalogingsheet
 
 %%%%%%%%%%%%%%%%%%%%%
-% Termo de aprovacaoo
+% Termo de aprovação
 %%%%%%%%%%%%%%%%%%%%%
 
 \approvalsheet{Salvador, 25 de Novembro de 2022}{
    \comittemember{Prof. Dr. Tiago de Oliveira Januario}{Universidade Federal da Bahia}
    \comittemember{Prof. Dr. Vinicius Tavares Petrucci}{Micron Technology, Inc.}
    \comittemember{Prof. Dr. Ramon Pereira Lopes}{Universidade Federal do Recôncavo da Bahia}
-   % Para mestrado, apenas 3.
-   % \comittemember{Prof. Dr. Professor 4}{Universidade HJKL}
-   % \comittemember{Profa. Dra. Professora 5}{Universidade QWERTY}
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Dedicatoria, Agradecimentos, Epigrafe
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Agradecimentos
-% Se preferir, crie um arquivo `a parte e o inclua via \include{}
 \acknowledgements
 \input{src/acknowledgements}
 
-% Epigrafe
 \begin{epigraph}[Tao Te Ching]{Lao Tzu}
 The journey of a thousand miles begins with one step.
 \end{epigraph}
@@ -212,65 +158,29 @@ The journey of a thousand miles begins with one step.
 % Sumario / Indice
 %%%%%%%%%%%%%%%%%%%
 
-% Comente para ocultar
 \tableofcontents
 
-% Lista de figuras
-% Comente para ocultar
 \listoffigures
 
-% Lista de tabelas
-% Comente para ocultar
 %\listoftables
 
-%
 \lstlistoflistings
 
+%%%%%%%%%%%%%%%%%%%
+% Conteúdo
+%%%%%%%%%%%%%%%%%%%
 
-\iffalse
-\chapter*{Lista de Siglas}
-
-% Sintaxe da lista de acordo com a documentaÃ§Ã£o do pacote `acronym'
-% documentaÃ§Ã£o: http://mirror.unl.edu/ctan/macros/latex/contrib/acronym/acronym.pdf
-\begin{acronym}[PGCOMP]
-    \acro{PGCOMP}{Programa de Pós-Graduação em Ciência da Computação}
-    \acro{CNPq}{Conselho Nacional de Desenvolvimento Centífico e Tecnológico}
-\end{acronym}
-\fi
-
-%% Parte textual
 \mainmatter
 
-%\input{content-sample}
 \input{src/content}
 
-%% Parte pos-textual
 \backmatter
 
-% Bibliografia
-% Ã‰ aconselhÃ¡vel utilizar o BibTeX a partir de um arquivo, digamos "biblio.bib".
-% Para ajuda na criaÃ§Ã£o do arquivo .bib e utilizaÃ§Ã£o do BibTeX, recorra ao
-% BibTeXpress em www.cin.ufpe.br/~paguso/bibtexpress
 \bibliographystyle{abntex2-alf}
 \bibliography{src/biblio}
 
-% Apendices
 \begin{appendices}
 \renewcommand{\chaptername}{Appendix} % HACK
 \input{src/api}
 \end{appendices}
-
-%\xchapter{Exemplo de Apêndice}{} %sem preambulo
-%\lipsum
-%\fi
-% Eh aconselhavel criar cada apendice em um arquivo separado, digamos
-% "apendice1.tex", "apendice.tex", ... "apendiceM.tex" e depois
-% inclui--los com:
-% \include{apendice1}
-% \include{apendice2}
-% ...
-% \include{apendiceM}
-
-%% Fim do documento
 \end{document}
-%------------------------------------------------------------------------------------------%
