@@ -1,25 +1,35 @@
-TARGET=main
+TARGET_THESIS=main
+TARGET_SLIDE=slide
 LATEX=pdflatex
 BIBTEX=bibtex
 
-all: $(TARGET)
+all: $(TARGET_THESIS) $(TARGET_SLIDE)
 
-pdf: $(TARGET).pdf
+pdf: $(TARGET_THESIS).pdf $(TARGET_SLIDE).pdf
 
-$(TARGET): $(TARGET).pdf
+$(TARGET_THESIS): $(TARGET_THESIS).pdf
 
-$(TARGET).pdf: $(TARGET).tex \
+$(TARGET_SLIDE): $(TARGET_SLIDE).pdf
+
+$(TARGET_THESIS).pdf: $(TARGET_THESIS).tex \
                src/*.tex \
                src/*.bib \
                src/listing/* \
                src/figure/*
-	$(LATEX) $(TARGET).tex
-	$(BIBTEX) $(TARGET)
-	$(LATEX) $(TARGET).tex
-	$(LATEX) $(TARGET).tex
+	$(LATEX) $(TARGET_THESIS).tex
+	$(BIBTEX) $(TARGET_THESIS)
+	$(LATEX) $(TARGET_THESIS).tex
+	$(LATEX) $(TARGET_THESIS).tex
+
+$(TARGET_SLIDE).pdf: $(TARGET_SLIDE).tex \
+               src/figure/* \
+               src/listing/*
+	$(LATEX) $(TARGET_SLIDE).tex
+	#$(BIBTEX) $(TARGET_SLIDE)
 
 clean:
-	rm -f $(TARGET).pdf
+	rm -f $(TARGET_THESIS).pdf
+	rm -f $(TARGET_SLIDE).pdf
 	rm -f *.aux
 	rm -f *.bbl
 	rm -f *.blg
