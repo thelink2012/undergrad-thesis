@@ -87,7 +87,7 @@ In addition to capability setting, events of interest can be enabled (and disabl
 
 A JVMTI environment can be disposed of explicitly by calling \apijvmtiref{DisposeEnvironment} or implicitly during agent unloading. During disposal, the environment capabilities are automatically relinquished and its events disabled. Memory and any other additional resources the agent allocates must be freed manually.
 
-\lstinputlisting[language=C++,frame=tb,float,floatplacement=b,caption={Example of a JVMTI agent that intercepts every Java method entry. Agent setup creates a JVMTI environment and requests the necessary capabilities from it. Then, the method entry event is enabled, and its callbacks are set. Error handling is omitted for brevity.},label=lst:example_jvmti]{src/listing/example-jvmti.cpp}.
+\lstinputlisting[language=C++,frame=tb,float,floatplacement=b,caption={Example of a JVMTI agent that intercepts every Java method entry. Agent setup creates a JVMTI environment and requests the necessary capabilities from it. Then, the method entry event is enabled, and its callbacks are set. Error handling is omitted for brevity.},label=lst:example_jvmti]{src/listing/example-jvmti.cpp}
 
 \subsection{Safepoints}
 

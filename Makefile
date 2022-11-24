@@ -25,7 +25,8 @@ $(TARGET_SLIDE).pdf: $(TARGET_SLIDE).tex \
                src/figure/* \
                src/listing/*
 	$(LATEX) $(TARGET_SLIDE).tex
-	#$(BIBTEX) $(TARGET_SLIDE)
+	$(LATEX) $(TARGET_SLIDE).tex
+	$(LATEX) $(TARGET_SLIDE).tex
 
 clean:
 	rm -f $(TARGET_THESIS).pdf
