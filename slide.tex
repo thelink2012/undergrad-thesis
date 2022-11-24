@@ -85,101 +85,43 @@
 \end{frame}
 
 \begin{frame}
-\frametitle{Sampling in Unix-like Systems}
-\begin{itemize}
-\item Sampling profilers need to sample the call stack trace.
-\item Application-wide timer -- \lstinline{ITIMER_PROF}.
-\item Notification through signals -- \lstinline{SIGPROF}.
-\item Handler must be \emph{async-signal-safe}.
-\note{Example: Deadlock if they try to hold same lock as interrupted thread.}
-\note{Primitive memory-operations and subset of system calls.}
-\end{itemize}
-\end{frame}
-
-\begin{frame}
 \frametitle{Java Virtual Machine}
 \begin{itemize}
 \item Abstract Machine.
 \note{Exists as an specification}
 \item Executes code independently of hardware and operating system.
-\item Has its own instruction-set.
-\item Several concrete implementations (hardware or software-based).
 \item Oracle's HotSpot is the reference implementation.
+\item Garbage-collected memory management.
 \end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Java Virtual Machine}
 \begin{itemize}
-\item Several programming languages targeting the JVM.
-\item Java, Scala, Clojure, JRuby, Jython...
-\item Widely popular in the software industry.
-\item Garbage-collected memory management.
+\item Several programming languages targeting the JVM
+\item A program compiles into a set of \emph{class files}.
+\item JVM interprets the class instructions (\emph{bytecode}).
+\item Bytecode just-in-time compiled to machine code.
 \end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Java Virtual Machine -- Execution Pipeline}
-\begin{itemize}
-\item A program compiles into a set of class files.
-\item A \emph{class file} contains JVM instructions (\emph{bytecode}).
-\item Class files are loaded and linked by the \emph{class loader}.
-\item JVM interprets the class bytecode once loaded.
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Java Virtual Machine -- JIT Compiler}
-\begin{itemize}
-\item Interpretation is slow!
-\item Just-in-time compilation to the rescue.
-\item Bytecode is compiled to machine code on-the-fly.
-\item JIT performs profile-guided compiler optimizations.
-\note[itemize]{
-    \item Tiered-compilation.
-    \item Four levels of compilation.
-    \item Optimizes and deoptimizes.
-    \item Profile built from instrumentation of loop-backedges and method calls.
-}
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Java Native Interface (JNI)}
-\begin{itemize}
-\item API for bytecode to interoperate with native code.
-\item Can invoke C++ functions from Java and vice-versa.
-\item Per-thread \emph{JNI environment} -- function-table and state.
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Java Native Interface (JNI)}
-\begin{figure}[b]
-\par\noindent\begin{minipage}[t]{.45\textwidth}
-\lstinputlisting[language=Java,frame=tlrb,basicstyle=\small]{src/listing/JNIExample.java}
-\end{minipage}\hfill
-\begin{minipage}[t]{.52\textwidth}
-\lstinputlisting[language=C++,frame=tlrb,basicstyle=\small]{src/listing/JNIExample.cpp}
-\end{minipage}
-\end{figure}
-\end{frame}
-
-\begin{frame}
-\frametitle{Java Native Interface (JNI)}
-\centering
-\includegraphics[width=0.81\textwidth]{src/figure/jni_function_table.png}
 \end{frame}
 
 \begin{frame}
 \frametitle{JVM Tool Interface (JVMTI)}
 \begin{itemize}
 \item API for native agents to build development and monitoring tools.
+\item Native agents are written in C++.
 \item Can inspect VM states and react to events.
-\item Same approach as JNI (data types, function-table, etc).
+\item Function table as an interface approach.
 \item Pay only for what you need attitude.
 \end{itemize}
 \end{frame}
+
+\begin{frame}
+\frametitle{JVM Tool Interface (JVMTI)}
+\centering
+\includegraphics[width=0.81\textwidth]{src/figure/jni_function_table.png}
+\end{frame}
+
 
 \begin{frame}
 \frametitle{JVM Tool Interface (JVMTI)}
@@ -187,69 +129,12 @@
 \end{frame}
 
 \begin{frame}
-\frametitle{Java Virtual Machine -- Safepoints}
-\begin{itemize}
-\item Point of execution in which all root object references are known.
-\item Used to implement garbage collection, thread dumps, etc.
-\item Program is in a safepoint only at specific points of JIT-compiled code.
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Java Virtual Machine -- Safepoint Polls}
+\frametitle{Java Virtual Machine -- Safepoint Bias}
 \begin{itemize}
 \item JIT-compiled code can only know root of objects through GC maps.
-\item GC maps contain stack frame locations the objects are stored.
-\item Memory intensive -- cannot generate for every machine instruction.
 \item Maps created only for specific instructions -- the \emph{safepoint polls}.
-\item Method entry/exit and loop backedges.
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Java Virtual Machine -- Time to Safepoint}
-\begin{itemize}
-\item Certain operations must bring all threads to a safepoint.
-\item It takes a little while -- known as \emph{time to safepoint}.
-\item Blocks safepointed threads, performs operation, resumes threads.
-\item A bit expensive.
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Java Virtual Machine -- Safepoint Bias}
-\begin{itemize}
-\item JVMTI provides \lstinline{GetStackTrace} et al.
-\item Requires thread to be in a safepoint!
+\item JVMTI's \lstinline{GetStackTrace} requires thread to be in a safepoint.
 \item Thus can only sample safepoint locations -- \emph{safepoint bias}.
-\item Additional interference of time to safepoint.
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Java Virtual Machine -- Safepoint Bias}
-\begin{itemize}
-\item Non-biased profilers exist e.g. \lstinline{honest-profiler}.
-\item Requires an undocumented HotSpot API -- \lstinline{AsyncGetCallTrace}.
-\item Cannot trace kernel and native code.
-\item ...but \lstinline{perf} hybrids can e.g. \lstinline{async-profiler}.
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Elasticsearch}
-\begin{itemize}
-\item Distributed search engine written in Java.
-\item Provides indexing and querying interfaces.
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Dynamic Frequency Scaling (DFS)}
-\begin{itemize}
-\item Technique for improving power efficiency on multi-core systems.
-\item Adjusts processor frequency according to application's demand.
-\item Linux implements DFS on its \emph{Ondemand} governor.
 \end{itemize}
 \end{frame}
 
@@ -293,11 +178,11 @@
 \begin{frame}
 \frametitle{Design}
 \begin{itemize}
-\item Similar to JVMTI -- just like it is similar to JNI.
+\item Similar to JVMTI.
 \item Environment created with \lstinline{jvmtiProf_Create}.
 \item Can perform efficient \emph{method interception}.
 \item Can perform asynchronous \emph{call stack tracing}.
-\item Can perform execution sampling.
+\item Can perform \emph{execution sampling}.
 \item Pay only for what you ask for ;)
 \end{itemize}
 \end{frame}
@@ -317,7 +202,7 @@
 \begin{itemize}
 \item Uses some events from JVMTI to implement its functionalities.
 \item Collision between JVMTIPROF and JVMTI's API client desires.
-\item Solution: Redirect JVMTI function-table to JVMTIPROF managed functions.
+\item Solution: Redirect JVMTI function table to JVMTIPROF managed functions.
 \end{itemize}
 \end{frame}
 
@@ -360,11 +245,10 @@ public class Example {
 \begin{frame}
 \frametitle{Execution Sampling}
 \begin{itemize}
-\item Just like explained in \emph{Sampling in Unix-like Systems}.
-\item \lstinline{CLOCK_PROCESS_CPUTIME_ID} and \lstinline{SIGPROF}.
+\item \lstinline{CLOCK_PROCESS_CPUTIME_ID} timer.
+\item \lstinline{SIGPROF} signal.
 \item Interval set by \lstinline{SetExecutionSamplingInterval}.
-\item Callback must be async-signal-safe.
-\item Callback must consume little CPU time -- blocking a VM thread.
+\item Implementation and callback must be \emph{async-signal-safe}.
 \note{Usually handler uses async-signal-safe data structure and process in another thread.}
 \end{itemize}
 \end{frame}
@@ -400,36 +284,13 @@ public class Example {
 \begin{frame}
 \frametitle{Experimental Setup}
 \begin{itemize}
-\item Bare-metal server provided by Chameleon Cloud
+\item Wikipedia indexed in Elasticsearch.
+\item Load-generation runs for 20 minutes, six times.
 \begin{itemize}
-\item Intel Xeon Gold 6126 (Skylake)
-\item 196GB of DRAM
-\item 220GB of SSD
-\end{itemize}
-\item Ubuntu 20.04 (Linux kernel 5.4)
-\item Elasticsearch 6.5.4
-\item OpenJDK 8u342
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Experimental Setup}
-\begin{itemize}
-\item<1-> 24 physical cores, two-socket CPU.
-\begin{itemize}
-\item One socket for Elasticsearch.
-\item Another for load-generator (FABAN).
-\item Hyper-threading turned off.
-\end{itemize}
-\item<2-> Wikipedia indexed in Elasticsearch.
-\item<3-> Intel RAPL used for energy measurements.
-\item<4-> Load-generation runs for 20 minutes, six times.
-\begin{itemize}
-\item Each client issues one request per second.
 \item Low Load: 4 clients.
 \item High Load: 12 clients.
+\item Each client issues one request per second.
 \end{itemize}
-\item<5-> Report mean and standard deviation for 99-percentile latency and energy consumption.
 \end{itemize}
 \end{frame}
 
@@ -442,11 +303,6 @@ public class Example {
 \begin{frame}
 \frametitle{Results}
 \includegraphics[width=1.0\textwidth]{src/figure/ondem_vs_hup_vs_newhup.png}
-\end{frame}
-
-\begin{frame}
-\frametitle{Overhead}
-\includegraphics[width=1.0\textwidth]{src/figure/overhead.png}
 \end{frame}
 
 \section{Concluding Remarks}
